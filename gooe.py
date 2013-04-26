@@ -13,6 +13,6 @@ app = QApplication(sys.argv)
 
 # Create a simple dialog box
 msgBox = QMessageBox()
-msgBox.setText("Hello World!")
+msgBox.setText("Hello Nina!")
 msgBox.exec_()
 
