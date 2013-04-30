@@ -5,14 +5,22 @@
 
 import sys
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+#from PyQt4.QtCore import *
+#from PyQt4.QtGui import *
+from PyQt4 import QtGui, QtCore
 
-# Create the application object
-app = QApplication(sys.argv)
+app = QtGui.QApplication(sys.argv)
 
-# Create a simple dialog box
-msgBox = QMessageBox()
-msgBox.setText("Hello Nina!")
-msgBox.exec_()
+widget = QtGui.QWidget()
 
+btn = QtGui.QPushButton('Button!',widget)
+
+btn.resize(btn.sizeHint())
+btn.move(50, 50)
+btn.show()
+
+widget.setGeometry(300, 300, 250, 150)
+widget.setWindowTitle('Window!')
+widget.show()
+	
+sys.exit(app.exec_())
