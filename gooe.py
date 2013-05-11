@@ -10,41 +10,64 @@ import random
 #from PyQt4.QtGui import *
 from PyQt4 import QtGui, QtCore
 
-class MediaCentre(QtGui.QWidget):
+class MediaCentre(QtGui.QMainWindow):
 
     # This function simply calls the parent QWidget.__init__() function,
     # then calls our setup function
-    def __init__(self):
-        super(MediaCentre, self).__init__()
+    def __init__(self,parent=None):
+	QtGui.QWidget.__init__(self,parent)
         self.setup()
 
     # Setup all the windows/buttons etc..
     def setup(self):
 
         # Setup our window here these function are defined inthe QWidget Class
-        self.setGeometry(300, 300, 500, 500)
-        self.setWindowTitle('Media Centre')
-        self.mainWindow = QtGui.QMainWindow(self)
-        self.centralWidget = QtGui.QWidget(self.mainWindow)
-        self.mainWindow.setCentralWidget(self.centralWidget)
-
+	self.setWindowTitle('Media Centre')
+	self.resize(1040,640);
+	self.centralWidget = QtGui.QWidget(self)
+	self.setCentralWidget(self.centralWidget)
 
         # Setup Menubar
-        self.menuBar = QtGui.QMenuBar(self.mainWindow)
-        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1070, 21))
-        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
-        self.sizePolicy.setHeightForWidth(self.menuBar.sizePolicy().hasHeightForWidth())
-        self.menuBar.setSizePolicy(self.sizePolicy)
-        self.filemenu = QtGui.QMenu(self.menuBar)
-        self.filemenu.addMenu("files")
-        self.mainWindow.setMenuBar(self.menuBar)
+	self.menuBar = QtGui.QMenuBar(self)
+	self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+	self.sizePolicy.setHeightForWidth(self.menuBar.sizePolicy().hasHeightForWidth())
+	self.menuBar.setSizePolicy(self.sizePolicy)
 
+	# File Menu
+	self.menuFile = QtGui.QMenu(self.menuBar)
+	self.menuFile.setTitle("File")
 
+	self.actionOpenDir = QtGui.QAction(self)
+	self.actionOpenDir.setText("Open")
 
+	self.actionSave = QtGui.QAction(self)
+	self.actionSave.setText("Save")
+
+	self.actionClose = QtGui.QAction(self)
+	self.actionClose.setText("Close")
+
+	self.menuFile.addAction(self.actionOpenDir)
+	self.menuFile.addAction(self.actionSave)
+	self.menuFile.addSeparator()
+	self.menuFile.addAction(self.actionClose)
+
+	# Edit Menu
+	self.menuEdit = QtGui.QMenu(self.menuBar)
+	self.menuEdit.setTitle("Edit")
+
+	self.actionSettings = QtGui.QAction(self)
+	self.actionSettings.setText("Settings")
+
+	self.menuEdit.addAction(self.actionSettings)
+
+	self.menuBar.addAction(self.menuFile.menuAction())
+	self.menuBar.addAction(self.menuEdit.menuAction())
+
+	self.setMenuBar(self.menuBar)
 
         # Setup tabs
         self.tabWidget = QtGui.QTabWidget(self.centralWidget)
-        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 1051, 781))
+	self.tabWidget.setGeometry(QtCore.QRect(0, 0, 1040, 640))
         self.tab = QtGui.QWidget()
         self.tabWidget.addTab(self.tab,"Tab1")
         self.tab_2 = QtGui.QWidget()
@@ -52,10 +75,10 @@ class MediaCentre(QtGui.QWidget):
 
         #Setup Keypad
         self.keypad = QtGui.QGroupBox("Keypad", self.tab)
-        self.keypad.setGeometry(QtCore.QRect(480,40, 471, 461))
+	self.keypad.setGeometry(QtCore.QRect(40,40, 471, 461))
         self.keypad.setAlignment(QtCore.Qt.AlignCenter)
         self.gridLayoutWidget = QtGui.QWidget(self.keypad)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 40, 411, 381))
+	self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 40, 411, 381))
         self.gridLayout = QtGui.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setMargin(0)
 
@@ -149,9 +172,6 @@ class MediaCentre(QtGui.QWidget):
         self.btn16.setSizePolicy(self.sizePolicy)
         self.gridLayout.addWidget(self.btn16, 3, 3, 1, 1)
 
-
-
-
        # print self.buttonGroup.buttons()
 
        #self.connect(self.buttonGroup.button(1), QtCore.SIGNAL("clicked()"), self.buttonPress)
@@ -159,7 +179,7 @@ class MediaCentre(QtGui.QWidget):
 
         # "Connect" a button press event with a function in this case buttonPress()
         #self.connect(self.btn, QtCore.SIGNAL("clicked()"), self.buttonPress)
-        self.mainWindow.show()
+
     # This function is "connected" to the clicked event signal from self.btn
     def buttonPress(self):
         # Move the button to random positions using the random module
@@ -170,7 +190,6 @@ app = QtGui.QApplication(sys.argv)
 
 # Create our widget & Show it
 window = MediaCentre()
-window.resize(1000, 600)
 window.show()
 
 # Execute this app
