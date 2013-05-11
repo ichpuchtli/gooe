@@ -24,140 +24,142 @@ class MediaCentre(QtGui.QWidget):
         # Setup our window here these function are defined inthe QWidget Class
         self.setGeometry(300, 300, 500, 500)
         self.setWindowTitle('Media Centre')
-        self.keyboard=QtGui.QGroupBox("Keyboard",self)
-        self.keyboard.setGeometry(QtCore.QRect(100,30, 350, 200))
-        self.keyboard.setObjectName("Keyboard")
-        self.buttonGroup = QtGui.QButtonGroup()
+        self.mainWindow = QtGui.QMainWindow(self)
+        self.centralWidget = QtGui.QWidget(self.mainWindow)
+        self.mainWindow.setCentralWidget(self.centralWidget)
 
 
-        # Create a button
-        #self.btn = QtGui.QPushButton('Button!', self)
-        #self.btn.resize(self.btn.sizeHint())
-        #self.btn.move(30,30)
-        #self.btn.show()
-        #self.buttonGroup.addButton(self.btn,1)
+        # Setup Menubar
+        self.menuBar = QtGui.QMenuBar(self.mainWindow)
+        self.menuBar.setGeometry(QtCore.QRect(0, 0, 1070, 21))
+        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
+        self.sizePolicy.setHeightForWidth(self.menuBar.sizePolicy().hasHeightForWidth())
+        self.menuBar.setSizePolicy(self.sizePolicy)
+        self.filemenu = QtGui.QMenu(self.menuBar)
+        self.filemenu.addMenu("files")
+        self.mainWindow.setMenuBar(self.menuBar)
 
-        #self.btnlist = range(16)
-        #for i in range(16):
-        #        self.btnlist[i] = QtGui.QPushButton("Button")
-        #        self.btnlist[i].show()
-        #for i in range(16):
-        #        self.buttonGroup.addButton(self.btnlist[i],i)
+
+
+
+        # Setup tabs
+        self.tabWidget = QtGui.QTabWidget(self.centralWidget)
+        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 1051, 781))
+        self.tab = QtGui.QWidget()
+        self.tabWidget.addTab(self.tab,"Tab1")
+        self.tab_2 = QtGui.QWidget()
+        self.tabWidget.addTab(self.tab_2,"Tab2")
+
+        #Setup Keypad
+        self.keypad = QtGui.QGroupBox("Keypad", self.tab)
+        self.keypad.setGeometry(QtCore.QRect(480,40, 471, 461))
+        self.keypad.setAlignment(QtCore.Qt.AlignCenter)
+        self.gridLayoutWidget = QtGui.QWidget(self.keypad)
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 40, 411, 381))
+        self.gridLayout = QtGui.QGridLayout(self.gridLayoutWidget)
+        self.gridLayout.setMargin(0)
 
 
         #Create buttons first row
-        self.btn = QtGui.QPushButton("Button1", self.keyboard)
-        self.btn.resize(self.btn.sizeHint())
-        self.btn.move(10,20)
-        self.btn.show()
-        self.buttonGroup.addButton(self.btn,1)
+        self.btn = QtGui.QPushButton("Button1", self.gridLayoutWidget)
+        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.sizePolicy.setHeightForWidth(self.btn.sizePolicy().hasHeightForWidth())
+        self.btn.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn, 0, 0, 1, 1)
 
-        self.btn2 = QtGui.QPushButton("Button2", self.keyboard)
-        self.btn2.resize(self.btn.sizeHint())
-        self.btn2.move(90,20)
-        self.btn2.show()
-        self.buttonGroup.addButton(self.btn2,2)
+        self.btn2 = QtGui.QPushButton("Button2", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn2.sizePolicy().hasHeightForWidth())
+        self.btn2.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn2, 0, 1, 1, 1)
 
-        self.btn3= QtGui.QPushButton("Button2", self.keyboard)
-        self.btn3.resize(self.btn.sizeHint())
-        self.btn3.move(170,20)
-        self.btn3.show()
-        self.buttonGroup.addButton(self.btn,3)
+        self.btn3= QtGui.QPushButton("Button2", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn3.sizePolicy().hasHeightForWidth())
+        self.btn3.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn3, 0, 2, 1, 1)
 
-        self.btn4 = QtGui.QPushButton("Button4", self.keyboard)
-        self.btn4.resize(self.btn.sizeHint())
-        self.btn4.move(250,20)
-        self.btn4.show()
-        self.buttonGroup.addButton(self.btn,4)
+        self.btn4 = QtGui.QPushButton("Button4", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn4.sizePolicy().hasHeightForWidth())
+        self.btn4.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn4, 0, 3, 1, 1)
+
 
         #Creat buttons second row
-        self.btn5 = QtGui.QPushButton("Button5", self.keyboard)
-        self.btn5.resize(self.btn.sizeHint())
-        self.btn5.move(10,50)
-        self.btn5.show()
-        self.buttonGroup.addButton(self.btn5,5)
+        self.btn5 = QtGui.QPushButton("Button5", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn5.sizePolicy().hasHeightForWidth())
+        self.btn5.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn5, 1, 0, 1, 1)
 
-        self.btn6 = QtGui.QPushButton("Button6", self.keyboard)
-        self.btn6.resize(self.btn.sizeHint())
-        self.btn6.move(90,50)
-        self.btn6.show()
-        self.buttonGroup.addButton(self.btn6,6)
 
-        self.btn7= QtGui.QPushButton("Button7", self.keyboard)
-        self.btn7.resize(self.btn.sizeHint())
-        self.btn7.move(170,50)
-        self.btn7.show()
-        self.buttonGroup.addButton(self.btn7,7)
+        self.btn6 = QtGui.QPushButton("Button6", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn6.sizePolicy().hasHeightForWidth())
+        self.btn6.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn6, 1, 1, 1, 1)
 
-        self.btn8 = QtGui.QPushButton("Button8", self.keyboard)
-        self.btn8.resize(self.btn.sizeHint())
-        self.btn8.move(250,50)
-        self.btn8.show()
-        self.buttonGroup.addButton(self.btn8,8)
+
+        self.btn7= QtGui.QPushButton("Button7", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn7.sizePolicy().hasHeightForWidth())
+        self.btn7.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn7, 1, 2, 1, 1)
+
+
+        self.btn8 = QtGui.QPushButton("Button8", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn8.sizePolicy().hasHeightForWidth())
+        self.btn8.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn8, 1, 3, 1, 1)
 
         #Creat buttons third row
-        self.btn9 = QtGui.QPushButton("Button9", self.keyboard)
-        self.btn9.resize(self.btn.sizeHint())
-        self.btn9.move(10,80)
-        self.btn9.show()
-        self.buttonGroup.addButton(self.btn9,9)
+        self.btn9 = QtGui.QPushButton("Button9", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn9.sizePolicy().hasHeightForWidth())
+        self.btn9.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn9, 2, 0, 1, 1)
 
-        self.btn10 = QtGui.QPushButton("Button10", self.keyboard)
-        self.btn10.resize(self.btn.sizeHint())
-        self.btn10.move(90,80)
-        self.btn10.show()
-        self.buttonGroup.addButton(self.btn10,10)
+        self.btn10 = QtGui.QPushButton("Button10", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn10.sizePolicy().hasHeightForWidth())
+        self.btn10.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn10, 2, 1, 1, 1)
 
-        self.btn11= QtGui.QPushButton("Button11", self.keyboard)
-        self.btn11.resize(self.btn.sizeHint())
-        self.btn11.move(170,80)
-        self.btn11.show()
-        self.buttonGroup.addButton(self.btn11,11)
+        self.btn11= QtGui.QPushButton("Button11", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn11.sizePolicy().hasHeightForWidth())
+        self.btn11.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn11, 2, 2, 1, 1)
 
-        self.btn12 = QtGui.QPushButton("Button12", self.keyboard)
-        self.btn12.resize(self.btn.sizeHint())
-        self.btn12.move(250,80)
-        self.btn12.show()
-        self.buttonGroup.addButton(self.btn12,12)
+        self.btn12 = QtGui.QPushButton("Button12", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn12.sizePolicy().hasHeightForWidth())
+        self.btn12.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn12, 2, 3, 1, 1)
 
         #Creat buttons fourth row
-        self.btn13 = QtGui.QPushButton("Button13", self.keyboard)
-        self.btn13.resize(self.btn.sizeHint())
-        self.btn13.move(10,110)
-        self.btn13.show()
-        self.buttonGroup.addButton(self.btn9,9)
+        self.btn13 = QtGui.QPushButton("Button13", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn13.sizePolicy().hasHeightForWidth())
+        self.btn13.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn13, 3, 0, 1, 1)
 
-        self.btn14 = QtGui.QPushButton("Button14", self.keyboard)
-        self.btn14.resize(self.btn.sizeHint())
-        self.btn14.move(90,110)
-        self.btn14.show()
-        self.buttonGroup.addButton(self.btn14,14)
+        self.btn14 = QtGui.QPushButton("Button14", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn14.sizePolicy().hasHeightForWidth())
+        self.btn14.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn14, 3, 1, 1, 1)
 
-        self.btn15= QtGui.QPushButton("Button15", self.keyboard)
-        self.btn15.resize(self.btn.sizeHint())
-        self.btn15.move(170,110)
-        self.btn15.show()
-        self.buttonGroup.addButton(self.btn15,15)
+        self.btn15= QtGui.QPushButton("Button15", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn15.sizePolicy().hasHeightForWidth())
+        self.btn15.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn15, 3, 2, 1, 1)
 
-        self.btn16 = QtGui.QPushButton("Button16", self.keyboard)
-        self.btn16.resize(self.btn.sizeHint())
-        self.btn16.move(250,110)
-        self.btn16.show()
-        self.buttonGroup.addButton(self.btn16,16)
+        self.btn16 = QtGui.QPushButton("Button16", self.keypad)
+        self.sizePolicy.setHeightForWidth(self.btn16.sizePolicy().hasHeightForWidth())
+        self.btn16.setSizePolicy(self.sizePolicy)
+        self.gridLayout.addWidget(self.btn16, 3, 3, 1, 1)
 
 
 
 
+       # print self.buttonGroup.buttons()
 
-
-
-
-
+       #self.connect(self.buttonGroup.button(1), QtCore.SIGNAL("clicked()"), self.buttonPress)
 
 
         # "Connect" a button press event with a function in this case buttonPress()
-        self.connect(self.btn, QtCore.SIGNAL("clicked()"), self.buttonPress)
-
+        #self.connect(self.btn, QtCore.SIGNAL("clicked()"), self.buttonPress)
+        self.mainWindow.show()
     # This function is "connected" to the clicked event signal from self.btn
     def buttonPress(self):
         # Move the button to random positions using the random module
@@ -168,6 +170,7 @@ app = QtGui.QApplication(sys.argv)
 
 # Create our widget & Show it
 window = MediaCentre()
+window.resize(1000, 600)
 window.show()
 
 # Execute this app
