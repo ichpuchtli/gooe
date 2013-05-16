@@ -34,6 +34,17 @@ class MediaCentre(QtGui.QMainWindow):
             self.buttonList[i].setSizePolicy(self.sizePolicy)
             self.gridLayout.addWidget(self.buttonList[i], int(i/4), int(i%4), 1, 1)
 
+        # Connect a button press event with a function buttonPress
+        for i in range (16):
+            self.buttonList[i].clicked.connect(self.buttonPress)
+
+
+    # This function is "connected" to the clicked event signal from ButtonList
+    def buttonPress(self):
+        # Print message of "Button# pressed"
+        QtCore.qDebug("Button Pressed")
+
+
     def setupMenuBar(self):
 
         # Setup Menubar
