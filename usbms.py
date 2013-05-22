@@ -5,19 +5,17 @@ import os
 
 class USBMSController():
 
-  #TODO Determine operating system
-  #TODO Create Buffers for each sample
   def __init__(self):
 
     self.os = sys.platform
     self.drive = os.path.abspath("/")
 
-    print os.getcwd()
-    print os.uname()
-    print os.path.abspath(".")
+    #print os.getcwd()
+    #print os.uname()
+    #print os.path.abspath(".")
 
   def isWindows(self):
-    return (self.os == "win32")
+    return (self.os == "win32")#
 
   def isLinux(self):
     return (self.os == "linux2")
@@ -26,12 +24,19 @@ class USBMSController():
 
     filp = open(filePath, 'w')
     filp.write(data)
+
+    filp.flush()
+    fsync(filp.fileno())
+
     filp.close()
-    
-    print "writeWaveData", filp
 
   def writeConfig(filePath, config):
     self.writeData(filePath, config.toText())
+
+  def readConfig(filePath, config):
+    filp = open(filePath, 'r')
+    config.fromText(filp.read())
+    filp.close()
   
   def listDriveLetters(self):
     if self.isWindows():
@@ -46,6 +51,10 @@ class USBMSController():
 
     else
       return os.listdirs("/run/media")
+
+  def copyFile(srcPath, destPath):
+    #TODO import shutil
+    pass
 
   def openDirLetter(self,letter):
     os.chdir(letter + ":\\")

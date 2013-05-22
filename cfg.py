@@ -3,7 +3,7 @@
 class Configuration():
 
   # Constants
-  LATCH = "latch"
+  LATCH = "latched"
   HOLD = "hold"
 
   ECHO = "echo"
@@ -12,8 +12,8 @@ class Configuration():
 
   def __init__(self):
     self.wavSizes = [0] * 16
-    self.wavLatchHold = [0] * 16
     self.effects = [0] * 4
+    self.wavLatchHold = [0] * 16
 
   def setWaveSize(self, wavNum, size):
     self.wavSizes[wavNum] = size
@@ -22,10 +22,10 @@ class Configuration():
     return self.wavSizes[wavNum]
 
   def setLatch(self, wavNum):
-    self.setLatchHold(wavNum, Config.LATCH)
+    self.setLatchHold(wavNum, Configuration.LATCH)
 
   def setHold(self, wavNum):
-    self.setLatchHold(wavNum, Config.HOLD)
+    self.setLatchHold(wavNum, Configuration.HOLD)
 
   def setLatchHold(self, wavNum, HoldLatch):
     self.wavLatchHold[wavNum] = HoldLatch
@@ -40,7 +40,7 @@ class Configuration():
     return self.effects[knobNum]
 
   def setEcho(self, knobNum):
-    self.setEffect(knobNum, Config.ECHO)
+    self.setEffect(knobNum, Configuration.ECHO)
 
   def toText(self):
 
@@ -57,4 +57,20 @@ class Configuration():
 
     return text
     
-  #TODO read config files & update class
+  def fromText(self, text):
+    i = 0
+    for line in text:
+      
+      if(line[0] == "#"):
+        continue
+
+      if( i < 16 ):
+        self.setWaveSize(i, int(line))
+
+      if( i >= 16 and i < 20 ):
+        self.setEffect(i - 16, line)
+
+      if( i >= 20 ):
+        self.setLatchHold(i - 20, line)
+
+      i += 1
