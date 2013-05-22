@@ -2,8 +2,9 @@
 
 import sys
 import os
+import shutil
 
-class USBMSController():
+class USBCtrl:
 
   def __init__(self):
 
@@ -20,20 +21,20 @@ class USBMSController():
   def isLinux(self):
     return (self.os == "linux2")
 
-  def writeData(filePath, data):
+  def writeData(self, filePath, data):
 
     filp = open(filePath, 'w')
     filp.write(data)
 
     filp.flush()
-    fsync(filp.fileno())
+    os.fsync(filp.fileno())
 
     filp.close()
 
-  def writeConfig(filePath, config):
+  def writeConfig(self, filePath, config):
     self.writeData(filePath, config.toText())
 
-  def readConfig(filePath, config):
+  def readConfig(self, filePath, config):
     filp = open(filePath, 'r')
     config.fromText(filp.read())
     filp.close()
@@ -49,14 +50,26 @@ class USBMSController():
 
       return drives
 
-    else
-      return os.listdirs("/run/media")
+    else:
+      return os.listdir("/run/media/sam")
 
-  def copyFile(srcPath, destPath):
-    #TODO import shutil
-    pass
+  def copyFile(self, srcPath, destPath):
+    copyfile(srcPath, destPath)
+
+  def pwd(self):
+    return os.getcwd()
+
+  def ls(self, path="."):
+    return os.listdir(path)
+
+  def cd(self,path):
+    os.chdir(path)
 
   def openDirLetter(self,letter):
-    os.chdir(letter + ":\\")
-    return os.listdir("/")
+    if self.isWindows():
+      os.chdir(letter + ":\\")
+      return os.listdir(".")
+    else:
+      os.chdir("/run/media/sam/" + letter)
+      return os.listdir(".")
   

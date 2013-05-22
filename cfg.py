@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 
-class Configuration():
+class Configuration:
 
   # Constants
   LATCH = "latched"
@@ -9,17 +9,31 @@ class Configuration():
   ECHO = "echo"
   DELAY = "delay"
   LFO = "lfo"
+  NO_EFFECT = "no_effect"
 
   def __init__(self):
     self.wavSizes = [0] * 16
-    self.effects = [0] * 4
-    self.wavLatchHold = [0] * 16
+    self.effects = [Configuration.NO_EFFECT] * 4
+    self.wavLatchHold = [Configuration.HOLD] * 16
+    self.wavFiles = [""] * 16
+
+  def setWavFile(self, wavNum, wavFilePath):
+    self.wavFiles[wavNum] = wavFilePath
+
+  def getWaveFile(self, wavNum):
+    return self.wavFiles[wavNum]
+
+  def clearWavFile(self, wavNum):
+    self.setWavFile(wavNum, "")
 
   def setWaveSize(self, wavNum, size):
     self.wavSizes[wavNum] = size
 
   def getWaveSize(self, wavNum):
     return self.wavSizes[wavNum]
+  
+  def zeroWaveSize(self, wavNum):
+    self.setWaveSize(wavNum, 0)
 
   def setLatch(self, wavNum):
     self.setLatchHold(wavNum, Configuration.LATCH)
