@@ -18,6 +18,7 @@ class MediaCentre(QtGui.QMainWindow):
         self.listWidget = QtGui.QListWidget(parent)
         self.listWidget.addItem(QtGui.QListWidgetItem("file1"))
         self.listWidget.addItem(QtGui.QListWidgetItem("file2"))
+        self.boxLayout = QtGui.QVBoxLayout(self.listWidget)
 
 
 
