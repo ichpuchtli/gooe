@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 
-class Configuration:
+class USBConfig:
 
   # Constants
   LATCH = "latched"
@@ -13,8 +13,8 @@ class Configuration:
 
   def __init__(self):
     self.wavSizes = [0] * 16
-    self.effects = [Configuration.NO_EFFECT] * 4
-    self.wavLatchHold = [Configuration.HOLD] * 16
+    self.effects = [USBConfig.NO_EFFECT] * 4
+    self.wavLatchHold = [USBConfig.HOLD] * 16
     self.wavFiles = [""] * 16
 
   def setWavFile(self, wavNum, wavFilePath):
@@ -36,10 +36,10 @@ class Configuration:
     self.setWaveSize(wavNum, 0)
 
   def setLatch(self, wavNum):
-    self.setLatchHold(wavNum, Configuration.LATCH)
+    self.setLatchHold(wavNum, USBConfig.LATCH)
 
   def setHold(self, wavNum):
-    self.setLatchHold(wavNum, Configuration.HOLD)
+    self.setLatchHold(wavNum, USBConfig.HOLD)
 
   def setLatchHold(self, wavNum, HoldLatch):
     self.wavLatchHold[wavNum] = HoldLatch
@@ -54,7 +54,7 @@ class Configuration:
     return self.effects[knobNum]
 
   def setEcho(self, knobNum):
-    self.setEffect(knobNum, Configuration.ECHO)
+    self.setEffect(knobNum, USBConfig.ECHO)
 
   def toText(self):
 

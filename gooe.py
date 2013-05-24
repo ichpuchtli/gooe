@@ -1,8 +1,13 @@
 # gooe.py - TP2 Gui (MediaCentre)
 
 import sys
+from cfg import USBConfig
+from usbms import USBController
+from wavfile import WavFileReader, WavFileWriter
+import widgets
 
 from PyQt4 import QtGui, QtCore
+import winsound
 
 class MediaCentre(QtGui.QMainWindow):
 
@@ -10,24 +15,44 @@ class MediaCentre(QtGui.QMainWindow):
     # then calls our setup function
     def __init__(self,parent=None):
         QtGui.QWidget.__init__(self,parent)
+
+	self.cfg = USBConfig()
+	self.usb = USBController()
+
         self.setup()
+
+
+    def menuOpenDirEvent(self):
+	    self.userdir = QtGui.QFileDialog.getExistingDirectory(self, "Choose Dir", ".")
+	    QtCore.qDebug(self.userdir)
+
+	    self.listWidget.clear()
+
+	    for filename in self.usb.ls(self.userdir):
+		    if ".wav" in filename:
+			    self.listWidget.addItem(QtGui.QListWidgetItem(filename))
+
+    def listItemDoubleClicked(self, widget):
+	    widget = self.sender()
+	    QtCore.qDebug(str(widget))
+	    filePath = self.userdir + "\\" + widget.currentItem().text()
+	    QtCore.qDebug(str(filePath))
+	    winsound.PlaySound(filePath, winsound.SND_FILENAME | winsound.SND_ASYNC)
 
     def setupList(self, parent):
 
         #Setup listwidget
         self.listWidget = QtGui.QListWidget(parent)
-        self.listWidget.addItem(QtGui.QListWidgetItem("file1"))
-        self.listWidget.addItem(QtGui.QListWidgetItem("file2"))
+	self.listWidget.itemDoubleClicked.connect(self.listItemDoubleClicked)
+	#self.connect(self.listWidget, QtCore.SIGNAL(itemDoubleClicked)
         self.boxLayout = QtGui.QVBoxLayout(self.listWidget)
-
-
-
 
     def setupKeypad(self, parent):
 
         #Setup Keypad
         self.keypad = QtGui.QGroupBox("Keypad", parent)
         self.keypad.setGeometry(QtCore.QRect(480,40, 471, 461))
+
         #change keypad position
         self.keypad.setAlignment(QtCore.Qt.AlignCenter)
 
@@ -51,12 +76,15 @@ class MediaCentre(QtGui.QMainWindow):
         for i in range (16):
             self.buttonList[i].clicked.connect(self.buttonPress)
 
-
     # This function is "connected" to the clicked event signal from ButtonList
     def buttonPress(self):
+	button = self.sender()
         # Print message of "Button# pressed"
-        QtCore.qDebug("Button Pressed")
+	QtCore.qDebug("Button Pressed: " + button.text())
 
+    def usbSelectEvent(self, boolean):
+	action = self.sender()
+	QtCore.qDebug("USB Device: " + action.text() + " Selected")
 
     def setupMenuBar(self):
 
@@ -72,6 +100,7 @@ class MediaCentre(QtGui.QMainWindow):
 
         self.actionOpenDir = QtGui.QAction(self)
         self.actionOpenDir.setText("Open")
+	self.actionOpenDir.triggered.connect(self.menuOpenDirEvent)
 
         self.actionSave = QtGui.QAction(self)
         self.actionSave.setText("Save")
@@ -86,12 +115,15 @@ class MediaCentre(QtGui.QMainWindow):
 
         # Edit Menu
         self.menuEdit = QtGui.QMenu(self.menuBar)
-        self.menuEdit.setTitle("Edit")
+        self.menuEdit.setTitle("USB Select ")
 
-        self.actionSettings = QtGui.QAction(self)
-        self.actionSettings.setText("Settings")
-
-        self.menuEdit.addAction(self.actionSettings)
+	self.letterActions = [None]*26
+	i = 0
+	for letter in self.usb.listDriveLetters():
+		self.letterActions[i] = QtGui.QAction(self)
+		self.letterActions[i].setText("(" + letter + ") Device")
+		self.menuEdit.addAction(self.letterActions[i])
+		self.letterActions[i].triggered.connect(self.usbSelectEvent)
 
         self.menuBar.addAction(self.menuFile.menuAction())
         self.menuBar.addAction(self.menuEdit.menuAction())
@@ -124,6 +156,8 @@ class MediaCentre(QtGui.QMainWindow):
 
         self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
 
+	self.waveform = widgets.WaveFormWidget(self.tab2, 0,0, 500, 500)
+
         self.setupKeypad(self.tab1)
 
         self.setupList(self.tab1)
@@ -135,6 +169,7 @@ app = QtGui.QApplication(sys.argv)
 # Create our widget & Show it
 window = MediaCentre()
 window.show()
+
 
 # Execute this app
 sys.exit(app.exec_())

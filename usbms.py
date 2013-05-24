@@ -4,7 +4,10 @@ import sys
 import os
 import shutil
 
-class USBCtrl:
+import string
+from ctypes import windll
+
+class USBController:
 
   def __init__(self):
 
