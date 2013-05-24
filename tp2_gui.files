@@ -5,3 +5,5 @@ serial.py
 Makefile
 user.py
 gooe2.py
+usbms.py
+cfg.py

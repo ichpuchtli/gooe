@@ -12,15 +12,28 @@ class MediaCentre(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self,parent)
         self.setup()
 
+    def setupList(self, parent):
+
+        #Setup listwidget
+        self.listWidget = QtGui.QListWidget(parent)
+        self.listWidget.addItem(QtGui.QListWidgetItem("file1"))
+        self.listWidget.addItem(QtGui.QListWidgetItem("file2"))
+        self.boxLayout = QtGui.QVBoxLayout(self.listWidget)
+
+
+
+
     def setupKeypad(self, parent):
 
         #Setup Keypad
         self.keypad = QtGui.QGroupBox("Keypad", parent)
-        self.keypad.setGeometry(QtCore.QRect(40,40, 471, 461))
+        self.keypad.setGeometry(QtCore.QRect(480,40, 471, 461))
+        #change keypad position
         self.keypad.setAlignment(QtCore.Qt.AlignCenter)
 
         self.gridLayoutWidget = QtGui.QWidget(self.keypad)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 40, 411, 381))
+        #change button size
 
         self.gridLayout = QtGui.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setMargin(0)
@@ -112,6 +125,8 @@ class MediaCentre(QtGui.QMainWindow):
         self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
 
         self.setupKeypad(self.tab1)
+
+        self.setupList(self.tab1)
 
 
 # Create the main QApplication
