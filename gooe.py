@@ -1,5 +1,6 @@
 # gooe.py - TP2 Gui (MediaCentre)
 
+import os
 import sys
 from cfg import USBConfig
 from usbms import USBController
@@ -11,19 +12,37 @@ import winsound
 
 class MediaCentre(QtGui.QMainWindow):
 
-    # This function simply calls the parent QWidget.__init__() function,
-    # then calls our setup function
     def __init__(self,parent=None):
         QtGui.QWidget.__init__(self,parent)
 
 	self.cfg = USBConfig()
 	self.usb = USBController()
 
-        self.setup()
+        self.setupUi()
 
+    def keyPressEvent(self, evt):
+        key = evt.key()
+        modifier = evt.modifiers()
+
+        if key == QtCore.Qt.Key_Escape:
+            QtGui.QApplication.exit()
+
+        IS_PASTE = (modifier == QtCore.Qt.ControlModifier and key == QtCore.Qt.Key_V)
+        if IS_PASTE:
+            clipboard = QtGui.QApplication.clipboard()
+            mime_data = clipboard.mimeData()
+
+            for url in mime_data.urls():
+                path = url.toLocalFile().toLocal8Bit().data()
+                if os.path.isfile(path):
+                    QtCore.qDebug(path)
+
+            QtCore.qDebug( "urls:" + str([i.toLocalFile() for i in mime_data.urls()]))
+            QtCore.qDebug( "text:" + str(mime_data.text()) )
+            QtCore.qDebug( "html:" + str(mime_data.html()) )
 
     def menuOpenDirEvent(self):
-	    self.userdir = QtGui.QFileDialog.getExistingDirectory(self, "Choose Dir", ".")
+	    self.userdir = QtGui.QFileDialog.getExistingDirectory(self, "Choose Sample Directory", ".")
 	    QtCore.qDebug(self.userdir)
 
 	    self.listWidget.clear()
@@ -44,20 +63,27 @@ class MediaCentre(QtGui.QMainWindow):
         #Setup listwidget
         self.listWidget = QtGui.QListWidget(parent)
 	self.listWidget.itemDoubleClicked.connect(self.listItemDoubleClicked)
-	#self.connect(self.listWidget, QtCore.SIGNAL(itemDoubleClicked)
+        self.listWidget.setDragEnabled(True)
+
+        for filename in self.usb.ls("sounds"):
+                if ".wav" in filename:
+                        self.listWidget.addItem(QtGui.QListWidgetItem(filename))
         self.boxLayout = QtGui.QVBoxLayout(self.listWidget)
 
     def setupKeypad(self, parent):
 
         #Setup Keypad
+        box_x = 280
+        box_y = 280
+
         self.keypad = QtGui.QGroupBox("Keypad", parent)
-        self.keypad.setGeometry(QtCore.QRect(480,40, 471, 461))
+        self.keypad.setGeometry(QtCore.QRect(420, 10, box_x, box_y))
 
         #change keypad position
         self.keypad.setAlignment(QtCore.Qt.AlignCenter)
 
         self.gridLayoutWidget = QtGui.QWidget(self.keypad)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 40, 411, 381))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 20, box_x - 20, box_y - 30))
         #change button size
 
         self.gridLayout = QtGui.QGridLayout(self.gridLayoutWidget)
@@ -66,7 +92,7 @@ class MediaCentre(QtGui.QMainWindow):
         self.buttonList = [None]*(16)
 
         for i in range(16):
-            self.buttonList[i] = QtGui.QPushButton("Button%d" % (i+1), self.gridLayoutWidget)
+            self.buttonList[i] = widgets.MPCPadButton("Button%d" % (i+1), self.gridLayoutWidget, i)
             self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
             self.sizePolicy.setHeightForWidth(self.buttonList[i].sizePolicy().hasHeightForWidth())
             self.buttonList[i].setSizePolicy(self.sizePolicy)
@@ -80,6 +106,8 @@ class MediaCentre(QtGui.QMainWindow):
     def buttonPress(self):
 	button = self.sender()
         # Print message of "Button# pressed"
+        #self.connect(self.tetrisboard, QtCore.SIGNAL("messageToStatusbar(QString)"),
+        self.statusBar().showMessage("Button Pressed: " + button.text())
 	QtCore.qDebug("Button Pressed: " + button.text())
 
     def usbSelectEvent(self, boolean):
@@ -99,17 +127,23 @@ class MediaCentre(QtGui.QMainWindow):
         self.menuFile.setTitle("File")
 
         self.actionOpenDir = QtGui.QAction(self)
-        self.actionOpenDir.setText("Open")
+        self.actionOpenDir.setText("Import Folder")
 	self.actionOpenDir.triggered.connect(self.menuOpenDirEvent)
 
-        self.actionSave = QtGui.QAction(self)
-        self.actionSave.setText("Save")
+        self.actionLoadSesh = QtGui.QAction(self)
+        self.actionLoadSesh.setText("Load Session")
+
+        self.actionSaveSesh = QtGui.QAction(self)
+        self.actionSaveSesh.setText("Save Session")
 
         self.actionClose = QtGui.QAction(self)
         self.actionClose.setText("Close")
+        self.actionClose.triggered.connect(QtGui.QApplication.exit)
 
         self.menuFile.addAction(self.actionOpenDir)
-        self.menuFile.addAction(self.actionSave)
+        self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionLoadSesh)
+        self.menuFile.addAction(self.actionSaveSesh)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionClose)
 
@@ -143,11 +177,12 @@ class MediaCentre(QtGui.QMainWindow):
         return tab, tab_2
 
     # Setup all the windows/buttons etc..
-    def setup(self):
+    def setupUi(self):
 
         # Setup our window here these function are defined inthe QWidget Class
         self.setWindowTitle('Media Centre')
-        self.resize(1040,640);
+        self.resize(960,480);
+        self.statusBar().showMessage('Ready')
 
         self.centralWidget = QtGui.QWidget(self)
         self.setCentralWidget(self.centralWidget)
@@ -156,11 +191,27 @@ class MediaCentre(QtGui.QMainWindow):
 
         self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
 
-	self.waveform = widgets.WaveFormWidget(self.tab2, 0,0, 500, 500)
+        #self.scrollarea = QtGui.QScrollArea(self.tab2)
 
-        self.setupKeypad(self.tab1)
+        self.layout = QtGui.QHBoxLayout()
 
-        self.setupList(self.tab1)
+	self.waveFormArea = widgets.WavePaintArea(self.tab1, 0, 0, 200, 40)
+        self.optionForm = widgets.WaveOptionForm(self.tab1)
+
+        self.layout.addWidget(self.waveFormArea)
+        self.layout.addWidget(self.optionForm)
+
+        self.tab1.setLayout(self.layout)
+
+	#self.waveform = widgets.WaveFormSlot(self.tab1)
+
+        #self.scrollarea.setWidget(self.waveform)
+
+        #self.scrollarea.setMinimumSize(640,120)
+
+        self.setupKeypad(self.tab2)
+
+        #self.setupList(self.tab1)
 
 
 # Create the main QApplication
@@ -169,6 +220,7 @@ app = QtGui.QApplication(sys.argv)
 # Create our widget & Show it
 window = MediaCentre()
 window.show()
+window.raise_()
 
 
 # Execute this app
