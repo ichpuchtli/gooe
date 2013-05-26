@@ -2,33 +2,48 @@
 
 import os
 import sys
+
+try:
+    from PyQt4 import QtGui, QtCore
+except ImportError:
+    from PySide import QtGui, QtCore
+
+
+# User Modules
 from cfg import USBConfig
-from usbms import USBController
+from usb import USBInterface
 from wavfile import WavFileReader, WavFileWriter
+from util import SysCtl
+
 import widgets
 
-from PyQt4 import QtGui, QtCore
-import winsound
+try:
+    import winsound
+except ImportError:
+    pass
 
 class MediaCentre(QtGui.QMainWindow):
 
     def __init__(self,parent=None):
-        QtGui.QWidget.__init__(self,parent)
+        QtGui.QMainWindow.__init__(self,parent)
 
+	self.usb = USBInterface("")
 	self.cfg = USBConfig()
-	self.usb = USBController()
 
         self.setupUi()
 
+###############################################################################
+## Event Overrides
+###############################################################################
+
     def keyPressEvent(self, evt):
+
         key = evt.key()
-        modifier = evt.modifiers()
 
         if key == QtCore.Qt.Key_Escape:
             QtGui.QApplication.exit()
 
-        IS_PASTE = (modifier == QtCore.Qt.ControlModifier and key == QtCore.Qt.Key_V)
-        if IS_PASTE:
+        if (evt.modifiers == QtCore.Qt.ControlModifier and key == QtCore.Qt.Key_V):
             clipboard = QtGui.QApplication.clipboard()
             mime_data = clipboard.mimeData()
 
@@ -41,13 +56,18 @@ class MediaCentre(QtGui.QMainWindow):
             QtCore.qDebug( "text:" + str(mime_data.text()) )
             QtCore.qDebug( "html:" + str(mime_data.html()) )
 
+
+###############################################################################
+## Slots
+###############################################################################
+
     def menuOpenDirEvent(self):
 	    self.userdir = QtGui.QFileDialog.getExistingDirectory(self, "Choose Sample Directory", ".")
 	    QtCore.qDebug(self.userdir)
 
 	    self.listWidget.clear()
 
-	    for filename in self.usb.ls(self.userdir):
+	    for filename in SysCtl.ls(self.userdir):
 		    if ".wav" in filename:
 			    self.listWidget.addItem(QtGui.QListWidgetItem(filename))
 
@@ -58,6 +78,14 @@ class MediaCentre(QtGui.QMainWindow):
 	    QtCore.qDebug(str(filePath))
 	    winsound.PlaySound(filePath, winsound.SND_FILENAME | winsound.SND_ASYNC)
 
+###############################################################################
+## GUI
+###############################################################################
+
+    def setupStatusBar(self):
+        self.statusbar = QtGui.QStatusBar(self)
+        self.setStatusBar(self.statusbar)
+
     def setupList(self, parent):
 
         #Setup listwidget
@@ -65,7 +93,7 @@ class MediaCentre(QtGui.QMainWindow):
 	self.listWidget.itemDoubleClicked.connect(self.listItemDoubleClicked)
         self.listWidget.setDragEnabled(True)
 
-        for filename in self.usb.ls("sounds"):
+        for filename in SysCtl.ls("sounds"):
                 if ".wav" in filename:
                         self.listWidget.addItem(QtGui.QListWidgetItem(filename))
         self.boxLayout = QtGui.QVBoxLayout(self.listWidget)
@@ -87,7 +115,9 @@ class MediaCentre(QtGui.QMainWindow):
         #change button size
 
         self.gridLayout = QtGui.QGridLayout(self.gridLayoutWidget)
-        self.gridLayout.setMargin(0)
+
+        # not working in pyside
+        #self.gridLayout.setMargin(0)
 
         self.buttonList = [None]*(16)
 
@@ -153,7 +183,7 @@ class MediaCentre(QtGui.QMainWindow):
 
 	self.letterActions = [None]*26
 	i = 0
-	for letter in self.usb.listDriveLetters():
+	for letter in SysCtl.listDriveLetters():
 		self.letterActions[i] = QtGui.QAction(self)
 		self.letterActions[i].setText("(" + letter + ") Device")
 		self.menuEdit.addAction(self.letterActions[i])
@@ -182,12 +212,15 @@ class MediaCentre(QtGui.QMainWindow):
         # Setup our window here these function are defined inthe QWidget Class
         self.setWindowTitle('Media Centre')
         self.resize(960,480);
-        self.statusBar().showMessage('Ready')
+
+        # Status bar
+        self.setupStatusBar()
+
+        # Menu bar
+        self.setupMenuBar()
 
         self.centralWidget = QtGui.QWidget(self)
         self.setCentralWidget(self.centralWidget)
-
-        self.setupMenuBar()
 
         self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
 

@@ -1,6 +1,9 @@
 #!/usr/bin/python2
 
-from PyQt4 import QtGui, QtCore
+try:
+    from PyQt4 import QtGui, QtCore
+except ImportError:
+    from PySide import QtGui, QtCore
 
 import random
 import math
@@ -97,3 +100,6 @@ class MPCPadButton(QtGui.QPushButton):
         QtCore.qDebug("MPCPadButton: dropEvent(" + str(e) + ")" )
         QtCore.qDebug(e.mimeData().text())
 
+    def selectButton(self):
+      pass
+    #TODO change font-weight slot indicate when a button has a sample
