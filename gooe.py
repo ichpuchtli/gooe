@@ -8,7 +8,6 @@ try:
 except ImportError:
     from PySide import QtGui, QtCore
 
-
 # User Modules
 from cfg import USBConfig
 from usb import USBInterface
@@ -42,20 +41,6 @@ class MediaCentre(QtGui.QMainWindow):
 
         if key == QtCore.Qt.Key_Escape:
             QtGui.QApplication.exit()
-
-        if (evt.modifiers == QtCore.Qt.ControlModifier and key == QtCore.Qt.Key_V):
-            clipboard = QtGui.QApplication.clipboard()
-            mime_data = clipboard.mimeData()
-
-            for url in mime_data.urls():
-                path = url.toLocalFile().toLocal8Bit().data()
-                if os.path.isfile(path):
-                    QtCore.qDebug(path)
-
-            QtCore.qDebug( "urls:" + str([i.toLocalFile() for i in mime_data.urls()]))
-            QtCore.qDebug( "text:" + str(mime_data.text()) )
-            QtCore.qDebug( "html:" + str(mime_data.html()) )
-
 
 ###############################################################################
 ## Slots
@@ -219,30 +204,38 @@ class MediaCentre(QtGui.QMainWindow):
         # Menu bar
         self.setupMenuBar()
 
-        self.centralWidget = QtGui.QWidget(self)
-        self.setCentralWidget(self.centralWidget)
+        #self.centralWidget = QtGui.QWidget(self)
+        #self.setCentralWidget(self.centralWidget)
 
-        self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
+        #self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
 
-        #self.scrollarea = QtGui.QScrollArea(self.tab2)
+        self.slotTableWidget = QtGui.QWidget()
 
-        self.layout = QtGui.QHBoxLayout()
+        self.slotTableLayout = QtGui.QVBoxLayout()
+        self.slotTableLayout.setSpacing(0)
+        self.slotTableLayout.setMargin(0)
 
-	self.waveFormArea = widgets.WavePaintArea(self.tab1, 0, 0, 200, 40)
-        self.optionForm = widgets.WaveOptionForm(self.tab1)
+        self.slotList = [None]*(16)
 
-        self.layout.addWidget(self.waveFormArea)
-        self.layout.addWidget(self.optionForm)
+        for i in range(16):
+            self.slotList[i] = widgets.WaveFormSlot(i, 700, 100)
+            self.slotTableLayout.addWidget(self.slotList[i])
 
-        self.tab1.setLayout(self.layout)
+        self.slotTableWidget.setLayout(self.slotTableLayout)
 
-	#self.waveform = widgets.WaveFormSlot(self.tab1)
+        self.scrollarea = QtGui.QScrollArea(self)
+        self.scrollarea.setWidget(self.slotTableWidget)
+
+        self.scrollarea.setWidgetResizable(True)
+
+        self.setCentralWidget(self.scrollarea)
+
 
         #self.scrollarea.setWidget(self.waveform)
 
         #self.scrollarea.setMinimumSize(640,120)
 
-        self.setupKeypad(self.tab2)
+        #self.setupKeypad(self.tab2)
 
         #self.setupList(self.tab1)
 

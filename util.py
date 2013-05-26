@@ -40,6 +40,12 @@ class SysCtl:
     shutil.copyfile(srcPath, destPath)
 
   @staticmethod
+  def mkdir(path):
+    # Doesn't exists create it
+    if(not os.access(path, os.F_OK)):
+      os.mkdir(path)
+
+  @staticmethod
   def pwd():
     return os.getcwd()
 

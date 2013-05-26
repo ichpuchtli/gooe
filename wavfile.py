@@ -2,6 +2,7 @@
 
 import wave
 import sys
+import array
 
 def isWindows():
   return sys.platform == "win32"
@@ -31,6 +32,11 @@ class WavFileReader:
   def playRegion(self, lower, upper):
     if isWindows():
       winsound.PlaySound(self.frames, winsound.SND_MEMORY)
+
+  def getData(self):
+      self.data = array.array('h')
+      self.data.fromstring(self.getFrames())
+      return self.data
 
   def getFrame(self, n):
     return self.frames[n]
