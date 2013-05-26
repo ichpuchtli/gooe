@@ -3,6 +3,8 @@
 import wave
 import sys
 import array
+import struct
+import filter
 
 def isWindows():
   return sys.platform == "win32"
@@ -12,50 +14,57 @@ if isWindows():
 
 class WavFileReader:
 
-  def __init__(self, filename):
-    self.fp = wave.open(filename, "r")
-    self.frames = self.getFramesFromFile()
+  def __init__(self, path):
+
+    self.path = path
+    self.fp = wave.open(path, "r")
+
+    raw = []
+    data = []
+    # 32bit
+    if self.getBitDepth() == 4:
+        for i in range(self.getNumFrames()):
+            waveFrame = self.fp.readframes(1)
+            raw += waveFrame
+            data += [(struct.unpack("<i", waveFrame)[0] >> 16)]
+
+    # 16bit
+    if self.getBitDepth() == 2:
+        for i in range(self.getNumFrames()):
+            waveFrame = self.fp.readframes(1)
+            raw += waveFrame
+            data += [struct.unpack("<h", waveFrame)[0]]
+
+    self.mono = []
+    # convert dual channel to single channel (mono)
+    if self.getNumChannels() == 2:
+        for i in range(len(data)):
+            self.mono[i] = (data[i] + data[i+1])/2
+    else:
+        self.mono = data
+
+    self.rawMono = ""
+    for sample in data:
+        self.rawMono += struct.pack("<h", sample)
+        
+    if self.getSampleFrequency() == 22050:
+        Filters.OverSample(self.mono)
+
+    self.close()
 
   def close(self):
     self.fp.close()
 
-  def getFrameFromFile(self, n):
-    #rewind
-    #setpos
-    #readframes(1)
-    return []
-
   def play(self):
     if isWindows():
-      winsound.PlaySound(self.frames, winsound.SND_MEMORY)
-
-  def playRegion(self, lower, upper):
-    if isWindows():
-      winsound.PlaySound(self.frames, winsound.SND_MEMORY)
+      #TODO Realtime e.g. create wav file
+      winsound.PlaySound(self.path, winsound.SND_FILENAME | winsound.SND_ASYNC)
 
   def getData(self):
-      self.data = array.array('h')
-      self.data.fromstring(self.getFrames())
-      return self.data
+      return self.mono
 
-  def getFrame(self, n):
-    return self.frames[n]
-
-  def pos(self):
-    return self.fp.tell()
-
-  def seek(self, n):
-    self.fp.setpos(n)
-
-  def rewind(self):
-    self.fp.rewind()
-
-  def getFrames(self):
-    return self.frames
-
-  def getFramesFromFile(self):
-    #rewind
-    return self.fp.readframes(self.getNumFrames())
+  def getRawData(self):
+      return self.rawMono
 
   def getNumFrames(self):
     return self.fp.getnframes()
@@ -90,12 +99,12 @@ class WavFileWriter:
   def setSampleFrequency(self, freq):
     self.fp.setframerate(freq)
 
-  def writeFrame(self, n, frame):
-    self.data[n] = frame[0]
-    self.data[n+1] = frame[1]
+  def writeRawData(self, string):
+    self.fp.writeframes(string)
 
-  def writeFrames(self, frames):
-    self.data += frames
+  def writeData(self, data):
+    raw = ""
+    for sample in data:
+        raw += struct.pack('<h', sample)
 
-  def sync(self):
-    self.fp.writeframes(self.data)
+    self.writeRawData(raw)
