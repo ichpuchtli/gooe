@@ -10,6 +10,7 @@ import math
 import os
 from util import SysCtl
 from wavfile import WavFileReader
+import winsound
 
 class WaveFormSlot(QtGui.QWidget):
 
@@ -59,11 +60,16 @@ class WaveFormSlot(QtGui.QWidget):
 
         self.num = num
 
+        self.optionForm.playButton.clicked.connect(self.playSample)
+
     def sizeHint(self):
         return QtCore.QSize(self.width, self.height)
 
     def dragEnterEvent(self, e):
         e.acceptProposedAction()
+
+    def playSample(self):
+        self.wavfile.play()
 
     def dropEvent(self, e):
         path = e.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
@@ -80,7 +86,10 @@ class WaveFormSlot(QtGui.QWidget):
 
             SysCtl.copyFile(path, copypath)
             
-            self.waveformArea.updateDataSet(copypath)
+            self.wavfile = WavFileReader(copypath)
+      
+            self.waveformArea.updateDataSet(self.wavfile.getData())
+
             #TODO import wave dialog with progress bar
             #TODO emit update data set
         
@@ -99,9 +108,8 @@ class WaveformPaintArea(QtGui.QWidget):
       return QtCore.QSize(self.width, self.height)
 
   #Slot
-  def updateDataSet(self, wavfile):
-      self.wavfile = WavFileReader(wavfile)
-      self.dataSet = self.wavfile.getData()
+  def updateDataSet(self, data):
+      self.dataSet = data
       self.update()
 
   def paintEvent(self, event):
@@ -130,16 +138,32 @@ class WaveformPaintArea(QtGui.QWidget):
       painter.drawPoint(x, y)
 
 class WaveOptionForm(QtGui.QWidget):
+    playPressed = QtCore.pyqtSignal()
 
     def __init__(self, parent):
         super(WaveOptionForm, self).__init__(parent)
 
-        layout = QtGui.QFormLayout(self)
-        layout.addRow(QtGui.QLabel("Line 1:"), QtGui.QLineEdit())
-        layout.addRow(QtGui.QLabel("Line 2, long text:"), QtGui.QComboBox())
-        layout.addRow(QtGui.QLabel("Line 3:"), QtGui.QSpinBox())
-        self.setLayout(layout)
-    
+        layout = QtGui.QGridLayout(self)
+
+        slider = QtGui.QSlider()
+        self.playButton = QtGui.QPushButton("Play")
+        effectsButton = QtGui.QPushButton("Add Effects")
+
+        self.syncButton = QtGui.QPushButton("Sync")
+        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.sizePolicy.setHeightForWidth(self.syncButton.sizePolicy().hasHeightForWidth())
+        self.syncButton.setSizePolicy(self.sizePolicy)
+
+
+        layout.addWidget(slider, 0, 1, 2, 1)
+        layout.addWidget(self.playButton, 0, 2)
+        layout.addWidget(effectsButton, 1, 2)
+        layout.addWidget(self.syncButton, 0, 3, 2, 2)
+
+        layout.setColumnStretch(1, 10)
+        layout.setColumnStretch(2, 20)
+
+
 
 class MPCPadButton(QtGui.QPushButton):
 
