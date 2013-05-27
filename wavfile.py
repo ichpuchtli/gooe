@@ -2,9 +2,11 @@
 
 import wave
 import sys
-import array
 import struct
-import filter
+
+import numpy
+
+from filters import Filters
 
 def isWindows():
   return sys.platform == "win32"
@@ -20,35 +22,42 @@ class WavFileReader:
     self.fp = wave.open(path, "r")
 
     raw = []
-    data = []
+    data = numpy.zeros(self.getNumFrames()*2+1)
+
     # 32bit
     if self.getBitDepth() == 4:
         for i in range(self.getNumFrames()):
             waveFrame = self.fp.readframes(1)
-            raw += waveFrame
-            data += [(struct.unpack("<i", waveFrame)[0] >> 16)]
+            if self.getNumChannels() == 2:
+                data[2*i] = (struct.unpack("<i<i", waveFrame[:4])[0] >> 16)
+                data[2*i+1] = (struct.unpack("<i<i", waveFrame[-4:])[0] >> 16)
+            else:
+                data[i] = (struct.unpack("<i", waveFrame)[0] >> 16)
 
     # 16bit
-    if self.getBitDepth() == 2:
+    elif self.getBitDepth() == 2:
         for i in range(self.getNumFrames()):
             waveFrame = self.fp.readframes(1)
-            raw += waveFrame
-            data += [struct.unpack("<h", waveFrame)[0]]
+            if self.getNumChannels() == 2:
+                data[2*i] = struct.unpack("<h", waveFrame[:2])[0]
+                data[2*i+1] = struct.unpack("<h", waveFrame[-2:])[0]
+            else:
+                data[i] = struct.unpack("<h", waveFrame)[0]
 
-    self.mono = []
+    else:
+      raise Error()
+
+    self.mono = numpy.zeros(len(data)/2+1)
+
     # convert dual channel to single channel (mono)
     if self.getNumChannels() == 2:
-        for i in range(len(data)):
-            self.mono[i] = (data[i] + data[i+1])/2
+        for i in range(len(data)/2):
+            self.mono[i] = (data[2*i] + data[2*i+1])/2
     else:
-        self.mono = data
+        self.mono = numpy.array(data)
 
-    self.rawMono = ""
-    for sample in data:
-        self.rawMono += struct.pack("<h", sample)
-        
-    if self.getSampleFrequency() == 22050:
-        Filters.OverSample(self.mono)
+    if self.getSampleFrequency() != Filters.FREQ:
+        self.mono = Filters.Resample(self.mono, float(Filters.FREQ)/self.getSampleFrequency())
 
     self.close()
 
@@ -64,7 +73,10 @@ class WavFileReader:
       return self.mono
 
   def getRawData(self):
-      return self.rawMono
+    rawMono = ""
+    for sample in self.mono:
+        rawMono += struct.pack("<h", sample)
+    return rawMono
 
   def getNumFrames(self):
     return self.fp.getnframes()
@@ -85,7 +97,7 @@ class WavFileWriter:
     self.setNumChannels(1)
     self.setBitDepth(2) # Bytes - 16bits
     self.setSampleFrequency(44100)
-    self.data = ""
+    self.data = numpy.array([])
 
   def close(self):
     self.fp.close()

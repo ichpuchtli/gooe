@@ -11,6 +11,7 @@ import os
 from util import SysCtl
 from wavfile import WavFileReader
 import winsound
+from filters import Filters
 
 class WaveFormSlot(QtGui.QWidget):
 
@@ -20,20 +21,30 @@ class WaveFormSlot(QtGui.QWidget):
         self.width = width
         self.height = height
 
+        self.waveFilePath = ""
+        self.waveFileName = ""
+        self.wavefile = None
+        
+        self.dataSet = []
+
+        self.num = num
+
+        self.setAcceptDrops(True)
+
         # WaveForm Widget
         ##################################################
-        self.waveformWidgetContainer = QtGui.QGroupBox("Waveform", self)
+        self.waveformWidgetContainer = QtGui.QGroupBox("Sample " + str(self.num+1) + ": ", self)
         self.waveformWidgetLayout = QtGui.QHBoxLayout(self)
 
         # Waveform Area instance
-	self.waveformArea = WaveformPaintArea(self, width, height)
+    	self.waveformArea = WaveformPaintArea(self, width, height)
 
         self.waveformWidgetLayout.addWidget(self.waveformArea)
         self.waveformWidgetContainer.setLayout(self.waveformWidgetLayout)
 
         # Option Form Widget
         ##################################################
-        self.formWidgetContainer = QtGui.QGroupBox("Form layout", self)
+        self.formWidgetContainer = QtGui.QGroupBox("Functions", self)
         self.formWidgetLayout = QtGui.QHBoxLayout(self)
 
         # WaveOptionForm instance
@@ -51,16 +62,35 @@ class WaveFormSlot(QtGui.QWidget):
 
         self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Minimum)
 
-        self.setAcceptDrops(True)
-
-        self.waveFilePath = ""
-        self.waveFileName = ""
-        
-        self.dataSet = []
-
-        self.num = num
+        # Signals/Slots
+        ##################################################
+        self.optionForm.addDelay.connect(self.addDelay)
+        self.optionForm.addEcho.connect(self.addEcho)
+        self.optionForm.addDecimator.connect(self.addDecimator)
+        self.optionForm.addBitCrusher.connect(self.addBitCrusher)
+        self.optionForm.addPitchShift.connect(self.addPitchShift)
 
         self.optionForm.playButton.clicked.connect(self.playSample)
+
+    def addDelay(self):
+        ok = False
+        while not ok:
+            i, ok = QtGui.QInputDialog.getInteger(self,
+                    "Set Delay (Seconds)", "Delay:", 1, 0, 100, 1)
+
+        QtCore.qDebug("%d%%" % i)
+
+    def addEcho(self):
+        QtCore.qDebug("addEcho:")
+
+    def addDecimator(self):
+        QtCore.qDebug("addDecimator:")
+
+    def addBitCrusher(self):
+        QtCore.qDebug("addBitCrusher:")
+
+    def addPitchShift(self):
+        QtCore.qDebug("addPitchShift:")
 
     def sizeHint(self):
         return QtCore.QSize(self.width, self.height)
@@ -69,15 +99,19 @@ class WaveFormSlot(QtGui.QWidget):
         e.acceptProposedAction()
 
     def playSample(self):
-        self.wavfile.play()
+        self.wavefile.play()
 
     def dropEvent(self, e):
         path = e.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
         if os.path.isfile(path):
             QtCore.qDebug(path)
 
+            e.acceptProposedAction()
+
             self.waveFilePath = path
             self.waveFileName = os.path.basename(path)
+
+            self.waveformWidgetContainer.setTitle("Sample " + str(self.num+1) + ": " + self.waveFileName)
             QtCore.qDebug(self.waveFileName)
 
             SysCtl.mkdir("tmp")
@@ -86,9 +120,9 @@ class WaveFormSlot(QtGui.QWidget):
 
             SysCtl.copyFile(path, copypath)
             
-            self.wavfile = WavFileReader(copypath)
+            self.wavefile = WavFileReader(copypath)
       
-            self.waveformArea.updateDataSet(self.wavfile.getData())
+            self.waveformArea.updateDataSet(self.wavefile.getData())
 
             #TODO import wave dialog with progress bar
             #TODO emit update data set
@@ -103,6 +137,9 @@ class WaveformPaintArea(QtGui.QWidget):
 
     self.dataSet = []
     self.wavfile = None
+    self.step = 1
+    self.division = 1
+    self.undersample = 2
 
   def sizeHint(self):
       return QtCore.QSize(self.width, self.height)
@@ -110,6 +147,8 @@ class WaveformPaintArea(QtGui.QWidget):
   #Slot
   def updateDataSet(self, data):
       self.dataSet = data
+      self.division = int(Filters.Peak2Peak(self.dataSet)/self.height)
+      self.step = int(len(self.dataSet) / self.undersample)
       self.update()
 
   def paintEvent(self, event):
@@ -126,44 +165,77 @@ class WaveformPaintArea(QtGui.QWidget):
 
     painter.setRenderHint(QtGui.QPainter.Antialiasing);
 
-    pen = QtGui.QPen(QtGui.QColor(255,0,0))
+    pen = QtGui.QPen(QtGui.QColor(0,200,200))
     pen.setWidth(1) #pixel
     painter.setPen(pen)
   
     step = len(self.dataSet) / 2
 
     for i in range(step):
-      y = self.height/2 + self.dataSet[i*2] / 500
-      x = int(i * self.width / step)
+      y = self.height/2 + self.dataSet[i*2] / self.division
+      x = i * self.width / step
       painter.drawPoint(x, y)
 
 class WaveOptionForm(QtGui.QWidget):
     playPressed = QtCore.pyqtSignal()
+
+    addDelay = QtCore.pyqtSignal()
+    addEcho = QtCore.pyqtSignal()
+    addDecimator = QtCore.pyqtSignal()
+    addPitchShift = QtCore.pyqtSignal()
+    addBitCrusher = QtCore.pyqtSignal()
 
     def __init__(self, parent):
         super(WaveOptionForm, self).__init__(parent)
 
         layout = QtGui.QGridLayout(self)
 
-        slider = QtGui.QSlider()
+        self.slider = QtGui.QSlider()
         self.playButton = QtGui.QPushButton("Play")
-        effectsButton = QtGui.QPushButton("Add Effects")
+        self.effectsButton = QtGui.QPushButton("Add Effect")
 
         self.syncButton = QtGui.QPushButton("Sync")
         self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.sizePolicy.setHeightForWidth(self.syncButton.sizePolicy().hasHeightForWidth())
         self.syncButton.setSizePolicy(self.sizePolicy)
 
+        menu = QtGui.QMenu(self)
 
-        layout.addWidget(slider, 0, 1, 2, 1)
+        self.echoAction = QtGui.QAction(self)
+        self.echoAction.setText("&Echo")
+        self.echoAction.triggered.connect(self.addEcho)
+
+        self.delayAction = QtGui.QAction(self)
+        self.delayAction.setText("&Delay")
+        self.delayAction.triggered.connect(self.addDelay)
+
+        self.decimatorAction = QtGui.QAction(self)
+        self.decimatorAction.setText("&Decimator")
+        self.decimatorAction.triggered.connect(self.addDecimator)
+
+        self.bitCrusherAction = QtGui.QAction(self)
+        self.bitCrusherAction.setText("&Bit Crush")
+        self.bitCrusherAction.triggered.connect(self.addBitCrusher)
+
+        self.pitchShiftAction = QtGui.QAction(self)
+        self.pitchShiftAction.setText("&Pitch Shift")
+        self.pitchShiftAction.triggered.connect(self.addPitchShift)
+
+        menu.addAction(self.echoAction)
+        menu.addAction(self.delayAction)
+        menu.addAction(self.decimatorAction)
+        menu.addAction(self.bitCrusherAction)
+        menu.addAction(self.pitchShiftAction)
+
+        self.effectsButton.setMenu(menu)
+
+        layout.addWidget(self.slider, 0, 1, 2, 1)
         layout.addWidget(self.playButton, 0, 2)
-        layout.addWidget(effectsButton, 1, 2)
+        layout.addWidget(self.effectsButton, 1, 2)
         layout.addWidget(self.syncButton, 0, 3, 2, 2)
 
         layout.setColumnStretch(1, 10)
         layout.setColumnStretch(2, 20)
-
-
 
 class MPCPadButton(QtGui.QPushButton):
 

@@ -218,7 +218,7 @@ class MediaCentre(QtGui.QMainWindow):
         self.slotList = [None]*(16)
 
         for i in range(16):
-            self.slotList[i] = widgets.WaveFormSlot(i, 700, 100)
+            self.slotList[i] = widgets.WaveFormSlot(i, 800, 70)
             self.slotTableLayout.addWidget(self.slotList[i])
 
         self.slotTableWidget.setLayout(self.slotTableLayout)
