@@ -12,13 +12,15 @@ class Filters:
   @staticmethod
   def BitCrusher(data, bits):
 
-    Filters.FloatToInt(data)
+    data = Filters.FloatToInt(data)
 
     for i in range(len(data)):
       data[i] >>= bits
       data[i] <<= bits
 
-    Filters.IntToFloat(data)
+    data = Filters.IntToFloat(data)
+
+    return data
 
   @staticmethod
   def Clone(data):
@@ -35,18 +37,15 @@ class Filters:
 
   @staticmethod
   def ScaleVolume(data, factor):
-      for i in range(len(data)):
-          data[i] *= factor
+    return data*factor
 
   @staticmethod
   def FloatToInt(data):
-      for i in range(len(data)):
-          data[i] = int(data[i])
+      return data.astype(int)
 
   @staticmethod
   def IntToFloat(data):
-      for i in range(len(data)):
-          data[i] = float(data[i])
+      return data.astype(float)
 
   @staticmethod
   def Peak2Peak(data):
@@ -65,15 +64,15 @@ class Filters:
     return Filters.Resample(Filters.Resample(data,perc),1/perc) 
 
   @staticmethod
-  def PitchShift(data, perc):
-    return Filters.Resample(data,perc) 
+  def PitchShift(data, frequency):
+    return Filters.Resample(data,Filters.FREQ/frequency) 
 
   @staticmethod
   def Delay(data, delay, alpha):
 
     pivot = delay*Filters.FREQ
 
-    delayed = numpy.array([])
+    delayed = numpy.array(data)
 
     delayed.resize(len(data) + pivot)
 
@@ -82,7 +81,7 @@ class Filters:
       if i < pivot:
         continue
 
-      delayed[i] = delayed[i] + data(i-pivot)*alpha
+      delayed[i] = delayed[i] + data[i-pivot]*alpha
 
     return numpy.clip(delayed, Filters.MIN_SHORT, Filters.MAX_SHORT)
 
@@ -91,7 +90,7 @@ class Filters:
 
     pivot = delay*Filters.FREQ
 
-    delayed = numpy.array([])
+    delayed = numpy.array(data)
 
     delayed.resize(len(data) + pivot)
 
@@ -100,6 +99,6 @@ class Filters:
       if i < pivot:
         continue
 
-      delayed[i] = delayed[i] + delayed(i-pivot)*alpha
+      delayed[i] = delayed[i] + delayed[i-pivot]*alpha
 
     return numpy.clip(delayed, Filters.MIN_SHORT, Filters.MAX_SHORT)

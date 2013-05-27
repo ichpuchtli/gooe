@@ -47,14 +47,16 @@ class WavFileReader:
     else:
       raise Error()
 
-    self.mono = numpy.zeros(len(data)/2+1)
 
     # convert dual channel to single channel (mono)
     if self.getNumChannels() == 2:
+
+        self.mono = numpy.zeros(len(data)/2+1)
+
         for i in range(len(data)/2):
             self.mono[i] = (data[2*i] + data[2*i+1])/2
     else:
-        self.mono = numpy.array(data)
+        self.mono = data[:len(data)/2+1]
 
     if self.getSampleFrequency() != Filters.FREQ:
         self.mono = Filters.Resample(self.mono, float(Filters.FREQ)/self.getSampleFrequency())

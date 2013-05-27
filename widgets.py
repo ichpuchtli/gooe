@@ -12,6 +12,7 @@ from util import SysCtl
 from wavfile import WavFileReader
 import winsound
 from filters import Filters
+import numpy
 
 class WaveFormSlot(QtGui.QWidget):
 
@@ -25,9 +26,9 @@ class WaveFormSlot(QtGui.QWidget):
         self.waveFileName = ""
         self.wavefile = None
         
-        self.dataSet = []
-
         self.num = num
+
+        self.dataSet = numpy.array([])
 
         self.setAcceptDrops(True)
 
@@ -65,32 +66,75 @@ class WaveFormSlot(QtGui.QWidget):
         # Signals/Slots
         ##################################################
         self.optionForm.addDelay.connect(self.addDelay)
-        self.optionForm.addEcho.connect(self.addEcho)
+        self.optionForm.addEcho.connect(self.addVolume)
         self.optionForm.addDecimator.connect(self.addDecimator)
         self.optionForm.addBitCrusher.connect(self.addBitCrusher)
         self.optionForm.addPitchShift.connect(self.addPitchShift)
+        self.optionForm.addVolume.connect(self.addVolume)
 
         self.optionForm.playButton.clicked.connect(self.playSample)
+
+    def addVolume(self):
+
+        ok = False
+        while not ok:
+            percentage, ok = QtGui.QInputDialog.getDouble(self,
+                    "Scale Volume (Percent%)", "Scale:", 50.0)
+
+        self.waveformArea.updateDataSet(Filters.ScaleVolume(self.wavefile.getData(),  percentage))
 
     def addDelay(self):
         ok = False
         while not ok:
-            i, ok = QtGui.QInputDialog.getInteger(self,
-                    "Set Delay (Seconds)", "Delay:", 1, 0, 100, 1)
+            delay, ok = QtGui.QInputDialog.getDouble(self,
+                    "Set Delay (Seconds)", "Delay:", 1.0)
 
-        QtCore.qDebug("%d%%" % i)
+        ok = False
+
+        while not ok:
+            alpha, ok = QtGui.QInputDialog.getDouble(self,
+                    "Set Alpha", "Alpha:", 0.5)
+
+        self.waveformArea.updateDataSet(Filters.Delay(self.wavefile.getData(), delay, alpha ))
 
     def addEcho(self):
-        QtCore.qDebug("addEcho:")
+        ok = False
+        while not ok:
+            delay, ok = QtGui.QInputDialog.getDouble(self,
+                    "Set Echo (Seconds)", "Delay:", 1.0)
+
+        ok = False
+
+        while not ok:
+            alpha, ok = QtGui.QInputDialog.getDouble(self,
+                    "Set Alpha", "Alpha:", 0.5)
+
+        self.waveformArea.updateDataSet(Filters.Echo(self.wavefile.getData(), delay, alpha ))
 
     def addDecimator(self):
-        QtCore.qDebug("addDecimator:")
+        ok = False
+        while not ok:
+            percentage, ok = QtGui.QInputDialog.getDouble(self,
+                    "Set Decimator Percentage", "Decimator:", 50.0)
+
+        self.waveformArea.updateDataSet(Filters.Decimator(self.wavefile.getData(), percentage/100.0 ))
+        self.waveformArea.update()
 
     def addBitCrusher(self):
-        QtCore.qDebug("addBitCrusher:")
+        ok = False
+        while not ok:
+            bits, ok = QtGui.QInputDialog.getInteger(self,
+                    "Set Num of Bits", "Bits:", 8)
+
+        self.waveformArea.updateDataSet(Filters.BitCrusher(self.wavefile.getData(), bits))
 
     def addPitchShift(self):
-        QtCore.qDebug("addPitchShift:")
+        ok = False
+        while not ok:
+            frequency, ok = QtGui.QInputDialog.getInteger(self,
+                    "Set the New Frequency", "Frequency:", 44100, step=1000)
+
+        self.waveformArea.updateDataSet(Filters.PitchShift(self.wavefile.getData(), frequency))
 
     def sizeHint(self):
         return QtCore.QSize(self.width, self.height)
@@ -139,7 +183,7 @@ class WaveformPaintArea(QtGui.QWidget):
     self.wavfile = None
     self.step = 1
     self.division = 1
-    self.undersample = 2
+    self.undersample = 32
 
   def sizeHint(self):
       return QtCore.QSize(self.width, self.height)
@@ -147,6 +191,7 @@ class WaveformPaintArea(QtGui.QWidget):
   #Slot
   def updateDataSet(self, data):
       self.dataSet = data
+      Filters.FloatToInt(self.dataSet)
       self.division = int(Filters.Peak2Peak(self.dataSet)/self.height)
       self.step = int(len(self.dataSet) / self.undersample)
       self.update()
@@ -169,10 +214,10 @@ class WaveformPaintArea(QtGui.QWidget):
     pen.setWidth(1) #pixel
     painter.setPen(pen)
   
-    step = len(self.dataSet) / 2
+    step = len(self.dataSet) / 16
 
     for i in range(step):
-      y = self.height/2 + self.dataSet[i*2] / self.division
+      y = self.height/2 + self.dataSet[i*16] / self.division
       x = i * self.width / step
       painter.drawPoint(x, y)
 
@@ -184,6 +229,7 @@ class WaveOptionForm(QtGui.QWidget):
     addDecimator = QtCore.pyqtSignal()
     addPitchShift = QtCore.pyqtSignal()
     addBitCrusher = QtCore.pyqtSignal()
+    addVolume = QtCore.pyqtSignal()
 
     def __init__(self, parent):
         super(WaveOptionForm, self).__init__(parent)
@@ -200,6 +246,10 @@ class WaveOptionForm(QtGui.QWidget):
         self.syncButton.setSizePolicy(self.sizePolicy)
 
         menu = QtGui.QMenu(self)
+
+        self.volumeAction = QtGui.QAction(self)
+        self.volumeAction.setText("&Volume")
+        self.volumeAction.triggered.connect(self.addVolume)
 
         self.echoAction = QtGui.QAction(self)
         self.echoAction.setText("&Echo")
