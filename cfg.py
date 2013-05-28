@@ -16,6 +16,7 @@ class USBConfig:
     self.effects = [USBConfig.NO_EFFECT] * 4
     self.wavLatchHold = [USBConfig.HOLD] * 16
     self.wavFiles = [""] * 16
+    self.tempo = 240
 
   def setWavFile(self, wavNum, wavFilePath):
     self.wavFiles[wavNum] = wavFilePath
@@ -25,6 +26,9 @@ class USBConfig:
 
   def clearWavFile(self, wavNum):
     self.setWavFile(wavNum, "")
+
+  def setTempo(self, tempo):
+    self.tempo = tempo
 
   def setWaveSize(self, wavNum, size):
     self.wavSizes[wavNum] = size
@@ -56,6 +60,11 @@ class USBConfig:
   def setEcho(self, knobNum):
     self.setEffect(knobNum, USBConfig.ECHO)
 
+  def toFile(self, path):
+    filp = open(path,"wb")
+    filp.write(self.toText())
+    filp.close()
+
   def toText(self):
 
     text = ""
@@ -63,11 +72,14 @@ class USBConfig:
     for i in range(16):
       text += str(self.getWaveSize(i)) + "\n"
 
+    text += str(self.tempo) + "\n"
+    """
     for i in range(4):
       text += str(self.getEffect(i)) + "\n"
 
     for i in range(16):
       text += str(self.getLatchHold(i)) + "\n"
+    """
 
     return text
     

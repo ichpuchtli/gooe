@@ -8,6 +8,11 @@ import numpy
 
 from filters import Filters
 
+try:
+    from PyQt4 import QtGui, QtCore
+except ImportError:
+    from PySide import QtGui, QtCore
+
 def isWindows():
   return sys.platform == "win32"
 
@@ -44,8 +49,11 @@ class WavFileReader:
             else:
                 data[i] = struct.unpack("<h", waveFrame)[0]
 
-    else:
-      raise Error()
+    # 16bit
+    elif self.getBitDepth() == 1:
+      self.mono = numpy.array([])
+      self.close()
+      return
 
 
     # convert dual channel to single channel (mono)
@@ -91,6 +99,7 @@ class WavFileReader:
 
   def getBitDepth(self):
     return self.fp.getsampwidth()
+
 
 class WavFileWriter:
 

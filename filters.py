@@ -2,6 +2,9 @@
 
 import numpy
 import scikits.samplerate as sp
+import winsound
+import struct
+
 
 class Filters:
 
@@ -27,13 +30,8 @@ class Filters:
     return numpy.array(data)
 
   @staticmethod
-  def CloneSlice(data, lower, upper):
+  def Slice(data, lower, upper):
       return Filters.Clone(data[lower:upper])
-
-  @staticmethod
-  def InPlaceSlice(data, lower, upper):
-      #del data[lower:upper]
-      pass
 
   @staticmethod
   def ScaleVolume(data, factor):
@@ -57,7 +55,7 @@ class Filters:
 
   @staticmethod
   def Resample(data, ratio):
-    return sp.resample(data, ratio, 'linear')
+    return sp.resample(data, ratio, 'sinc_best')
 
   @staticmethod
   def Decimator(data, perc):
@@ -92,7 +90,7 @@ class Filters:
 
     delayed = numpy.array(data)
 
-    delayed.resize(len(data) + pivot)
+    delayed.resize(len(data) + 3*pivot)
 
     for i in range(len(delayed)):
 
@@ -102,3 +100,25 @@ class Filters:
       delayed[i] = delayed[i] + delayed[i-pivot]*alpha
 
     return numpy.clip(delayed, Filters.MIN_SHORT, Filters.MAX_SHORT)
+
+  @staticmethod
+  def DataToWav(sample_array, sample_rate):
+    byte_count = (len(sample_array)) * 4  # 32-bit floats
+    wav_file = ""
+    # write the header
+    wav_file += struct.pack('<ccccIccccccccIHHIIHH','R', 'I', 'F', 'F',
+     byte_count + 0x2c - 8,'W', 'A', 'V', 'E', 'f', 'm', 't', ' ',0x10,3
+     , 1,sample_rate, sample_rate * 4,4, 32)
+
+    wav_file += struct.pack('<ccccI', 'd', 'a', 't', 'a', byte_count)
+
+    for sample in sample_array:
+      wav_file += struct.pack("<f", sample)
+
+    return wav_file
+
+  @staticmethod
+  def Play(data):
+    databuf = (data.astype(float)*(1/32767.0)).tolist()
+    strbuf = Filters.DataToWav(databuf,Filters.FREQ)
+    winsound.PlaySound(strbuf, winsound.SND_MEMORY)

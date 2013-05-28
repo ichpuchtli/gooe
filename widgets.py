@@ -9,10 +9,13 @@ import random
 import math
 import os
 from util import SysCtl
-from wavfile import WavFileReader
+from wavfile import WavFileReader, WavFileWriter
 import winsound
 from filters import Filters
 import numpy
+from cfg import USBConfig
+
+cfg = USBConfig()
 
 class WaveFormSlot(QtGui.QWidget):
 
@@ -34,7 +37,7 @@ class WaveFormSlot(QtGui.QWidget):
 
         # WaveForm Widget
         ##################################################
-        self.waveformWidgetContainer = QtGui.QGroupBox("Sample " + str(self.num+1) + ": ", self)
+        self.waveformWidgetContainer = QtGui.QGroupBox("Sample/Pad " + str(self.num+1) + ": ", self)
         self.waveformWidgetLayout = QtGui.QHBoxLayout(self)
 
         # Waveform Area instance
@@ -66,75 +69,96 @@ class WaveFormSlot(QtGui.QWidget):
         # Signals/Slots
         ##################################################
         self.optionForm.addDelay.connect(self.addDelay)
-        self.optionForm.addEcho.connect(self.addVolume)
+        self.optionForm.addEcho.connect(self.addEcho)
         self.optionForm.addDecimator.connect(self.addDecimator)
         self.optionForm.addBitCrusher.connect(self.addBitCrusher)
         self.optionForm.addPitchShift.connect(self.addPitchShift)
         self.optionForm.addVolume.connect(self.addVolume)
 
-        self.optionForm.playButton.clicked.connect(self.playSample)
+        self.optionForm.syncPressed.connect(self.sync)
+        self.optionForm.resetPressed.connect(self.reset)
+        self.optionForm.playPressed.connect(self.playSample)
+
+    def sync(self):
+
+        filename = "wav" + str(self.num+1) + ".wav" if self.num > 8 else "wav0" + str(self.num+1) + ".wav"
+
+        writefile = WavFileWriter("tmp" + "\\" + filename)                
+        writefile.writeData(self.waveformArea.getData())
+        writefile.close()
+
+        drive, ok = QtGui.QInputDialog.getItem(self, "Select USB Device", "Drive Letter:",
+         SysCtl.listDriveLetters(), 0, False)  
+
+        self.optionForm.syncButton.setChecked(True)
+
+        SysCtl.copyFile("tmp" + "\\" + filename, drive + ":\\" + filename)
+
+        #TODO Update cfg
+        cfg.setWaveSize(self.num, len(self.waveformArea.getData()) )
+
+        cfg.toFile(drive + ":\\" + "config.txt")
+
+        self.optionForm.syncButton.setChecked(False)
+
+
+
+    def reset(self):
+        self.waveformArea.updateDataSet(self.wavefile.getData())
 
     def addVolume(self):
 
-        ok = False
-        while not ok:
-            percentage, ok = QtGui.QInputDialog.getDouble(self,
-                    "Scale Volume (Percent%)", "Scale:", 50.0)
+        percentage, ok = QtGui.QInputDialog.getDouble(self,
+                "Scale Volume (Percent%)", "Scale:", 50.0)
 
-        self.waveformArea.updateDataSet(Filters.ScaleVolume(self.wavefile.getData(),  percentage))
+        if ok:
+            self.waveformArea.updateDataSet(Filters.ScaleVolume(self.waveformArea.getData(),  percentage/100))
 
     def addDelay(self):
-        ok = False
-        while not ok:
-            delay, ok = QtGui.QInputDialog.getDouble(self,
-                    "Set Delay (Seconds)", "Delay:", 1.0)
 
-        ok = False
+        delay, ok = QtGui.QInputDialog.getDouble(self,
+                "Set Delay (Seconds)", "Delay:", 1.0)
 
-        while not ok:
+        if ok:
+
             alpha, ok = QtGui.QInputDialog.getDouble(self,
-                    "Set Alpha", "Alpha:", 0.5)
+                        "Set Alpha", "Alpha:", 0.5)
 
-        self.waveformArea.updateDataSet(Filters.Delay(self.wavefile.getData(), delay, alpha ))
+            if ok:
+                self.waveformArea.updateDataSet(Filters.Delay(self.waveformArea.getData(), delay, alpha ))
 
     def addEcho(self):
-        ok = False
-        while not ok:
-            delay, ok = QtGui.QInputDialog.getDouble(self,
-                    "Set Echo (Seconds)", "Delay:", 1.0)
 
-        ok = False
-
-        while not ok:
+        delay, ok = QtGui.QInputDialog.getDouble(self,
+                "Set Echo (Seconds)", "Delay:", 1.0)
+        if ok:
             alpha, ok = QtGui.QInputDialog.getDouble(self,
-                    "Set Alpha", "Alpha:", 0.5)
+                        "Set Alpha", "Alpha:", 0.5)
 
-        self.waveformArea.updateDataSet(Filters.Echo(self.wavefile.getData(), delay, alpha ))
+            if ok:
+                self.waveformArea.updateDataSet(Filters.Echo(self.waveformArea.getData(), delay, alpha ))
 
     def addDecimator(self):
-        ok = False
-        while not ok:
-            percentage, ok = QtGui.QInputDialog.getDouble(self,
-                    "Set Decimator Percentage", "Decimator:", 50.0)
+        percentage, ok = QtGui.QInputDialog.getDouble(self,
+                "Set Decimator Percentage", "Decimator:", 50.0)
 
-        self.waveformArea.updateDataSet(Filters.Decimator(self.wavefile.getData(), percentage/100.0 ))
-        self.waveformArea.update()
+
+        if ok:
+            self.waveformArea.updateDataSet(Filters.Decimator(self.waveformArea.getData(), percentage/100.0 ))
 
     def addBitCrusher(self):
-        ok = False
-        while not ok:
-            bits, ok = QtGui.QInputDialog.getInteger(self,
-                    "Set Num of Bits", "Bits:", 8)
+        bits, ok = QtGui.QInputDialog.getInteger(self,
+                "Set Num of Bits", "Bits:", 8)
 
-        self.waveformArea.updateDataSet(Filters.BitCrusher(self.wavefile.getData(), bits))
+        if ok:
+            self.waveformArea.updateDataSet(Filters.BitCrusher(self.waveformArea.getData(), bits))
 
     def addPitchShift(self):
-        ok = False
-        while not ok:
-            frequency, ok = QtGui.QInputDialog.getInteger(self,
-                    "Set the New Frequency", "Frequency:", 44100, step=1000)
+        frequency, ok = QtGui.QInputDialog.getInteger(self,
+                "Set the New Frequency", "Frequency:", 44100, step=1000)
 
-        self.waveformArea.updateDataSet(Filters.PitchShift(self.wavefile.getData(), frequency))
+        if ok:
+            self.waveformArea.updateDataSet(Filters.PitchShift(self.waveformArea.getData(), float(frequency)))
 
     def sizeHint(self):
         return QtCore.QSize(self.width, self.height)
@@ -143,10 +167,11 @@ class WaveFormSlot(QtGui.QWidget):
         e.acceptProposedAction()
 
     def playSample(self):
-        self.wavefile.play()
+        Filters.Play(self.waveformArea.getData())
 
     def dropEvent(self, e):
         path = e.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
+
         if os.path.isfile(path):
             QtCore.qDebug(path)
 
@@ -155,17 +180,13 @@ class WaveFormSlot(QtGui.QWidget):
             self.waveFilePath = path
             self.waveFileName = os.path.basename(path)
 
-            self.waveformWidgetContainer.setTitle("Sample " + str(self.num+1) + ": " + self.waveFileName)
-            QtCore.qDebug(self.waveFileName)
+            self.wavefile = WavFileReader(path)
 
-            SysCtl.mkdir("tmp")
+            if self.wavefile.getBitDepth() == 1:
+              QtGui.QMessageBox.information(self, "Unsupported Format", "8Bit wav files are unsupported!")
+              return
 
-            copypath = "tmp/raw" + str(self.num) + ".wav"
-
-            SysCtl.copyFile(path, copypath)
-            
-            self.wavefile = WavFileReader(copypath)
-      
+            self.waveformWidgetContainer.setTitle("Sample/Pad " + str(self.num+1) + ": " + self.waveFileName)
             self.waveformArea.updateDataSet(self.wavefile.getData())
 
             #TODO import wave dialog with progress bar
@@ -185,16 +206,18 @@ class WaveformPaintArea(QtGui.QWidget):
     self.division = 1
     self.undersample = 32
 
+  def getData(self):
+    return Filters.IntToFloat(self.dataSet)
+
   def sizeHint(self):
-      return QtCore.QSize(self.width, self.height)
+    return QtCore.QSize(self.width, self.height)
 
   #Slot
   def updateDataSet(self, data):
-      self.dataSet = data
-      Filters.FloatToInt(self.dataSet)
-      self.division = int(Filters.Peak2Peak(self.dataSet)/self.height)
-      self.step = int(len(self.dataSet) / self.undersample)
-      self.update()
+    self.dataSet = Filters.FloatToInt(data)
+    self.division = int(Filters.Peak2Peak(self.dataSet)/self.height)
+    self.step = int(len(self.dataSet) / self.undersample)
+    self.update()
 
   def paintEvent(self, event):
 
@@ -214,15 +237,17 @@ class WaveformPaintArea(QtGui.QWidget):
     pen.setWidth(1) #pixel
     painter.setPen(pen)
   
-    step = len(self.dataSet) / 16
+    step = len(self.dataSet) / 2
 
     for i in range(step):
-      y = self.height/2 + self.dataSet[i*16] / self.division
+      y = self.height/2 + self.dataSet[i*2] / self.division
       x = i * self.width / step
       painter.drawPoint(x, y)
 
 class WaveOptionForm(QtGui.QWidget):
     playPressed = QtCore.pyqtSignal()
+    resetPressed = QtCore.pyqtSignal()
+    syncPressed = QtCore.pyqtSignal()
 
     addDelay = QtCore.pyqtSignal()
     addEcho = QtCore.pyqtSignal()
@@ -236,14 +261,11 @@ class WaveOptionForm(QtGui.QWidget):
 
         layout = QtGui.QGridLayout(self)
 
-        self.slider = QtGui.QSlider()
+        self.reset = QtGui.QPushButton("Reset")
         self.playButton = QtGui.QPushButton("Play")
         self.effectsButton = QtGui.QPushButton("Add Effect")
-
         self.syncButton = QtGui.QPushButton("Sync")
-        self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-        self.sizePolicy.setHeightForWidth(self.syncButton.sizePolicy().hasHeightForWidth())
-        self.syncButton.setSizePolicy(self.sizePolicy)
+        self.syncButton.setCheckable(True)
 
         menu = QtGui.QMenu(self)
 
@@ -271,6 +293,7 @@ class WaveOptionForm(QtGui.QWidget):
         self.pitchShiftAction.setText("&Pitch Shift")
         self.pitchShiftAction.triggered.connect(self.addPitchShift)
 
+        menu.addAction(self.volumeAction)
         menu.addAction(self.echoAction)
         menu.addAction(self.delayAction)
         menu.addAction(self.decimatorAction)
@@ -279,10 +302,14 @@ class WaveOptionForm(QtGui.QWidget):
 
         self.effectsButton.setMenu(menu)
 
-        layout.addWidget(self.slider, 0, 1, 2, 1)
-        layout.addWidget(self.playButton, 0, 2)
-        layout.addWidget(self.effectsButton, 1, 2)
-        layout.addWidget(self.syncButton, 0, 3, 2, 2)
+        self.reset.clicked.connect(self.resetPressed)
+        self.playButton.clicked.connect(self.playPressed)
+        self.syncButton.clicked.connect(self.syncPressed)
+
+        layout.addWidget(self.playButton, 0, 1)
+        layout.addWidget(self.reset, 0, 2)
+        layout.addWidget(self.effectsButton, 1, 1)
+        layout.addWidget(self.syncButton, 1, 2)
 
         layout.setColumnStretch(1, 10)
         layout.setColumnStretch(2, 20)
