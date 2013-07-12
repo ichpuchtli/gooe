@@ -1,107 +1,42 @@
 # gooe.py - TP2 Gui (MediaCentre)
 
-import os
-import sys
-
 try:
     from PyQt4 import QtGui, QtCore
 except ImportError:
     from PySide import QtGui, QtCore
 
-# User Modules
+import os
+import sys
 
+import random
+import math
+import numpy
+
+# User Modules
+from filters import Filters
+from cfg import USBConfig
 from usb import USBInterface
 from wavfile import WavFileReader, WavFileWriter
 from util import SysCtl
-
-import widgets
 
 try:
     import winsound
 except ImportError:
     pass
 
-
-import random
-import math
-
-from util import SysCtl
-from wavfile import WavFileReader, WavFileWriter
-import winsound
-from filters import Filters
-import numpy
-from cfg import USBConfig
-
-
-
 cfg = USBConfig()
-
 
 class MediaCentre(QtGui.QMainWindow):
 
     def __init__(self,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
-
-    	self.usb = USBInterface("")
-
+        self.usb = USBInterface("")
         self.setupUi()
 
-###############################################################################
-## Event Overrides
-###############################################################################
-
     def keyPressEvent(self, evt):
-
         key = evt.key()
-
         if key == QtCore.Qt.Key_Escape:
             QtGui.QApplication.exit()
-
-
-###############################################################################
-## GUI
-###############################################################################
-
-    def setupStatusBar(self):
-        self.statusbar = QtGui.QStatusBar(self)
-        self.setStatusBar(self.statusbar)
-
-    
-
-    def setupKeypad(self, parent):
-
-        #Setup Keypad
-        box_x = 280
-        box_y = 280
-
-        self.keypad = QtGui.QGroupBox("Keypad", parent)
-        self.keypad.setGeometry(QtCore.QRect(420, 10, box_x, box_y))
-
-        #change keypad position
-        self.keypad.setAlignment(QtCore.Qt.AlignCenter)
-
-        self.gridLayoutWidget = QtGui.QWidget(self.keypad)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 20, box_x - 20, box_y - 30))
-        #change button size
-
-        self.gridLayout = QtGui.QGridLayout(self.gridLayoutWidget)
-
-        # not working in pyside
-        #self.gridLayout.setMargin(0)
-
-        self.buttonList = [None]*(16)
-
-        for i in range(16):
-            self.buttonList[i] = MPCPadButton("Button%d" % (i+1), self.gridLayoutWidget, i)
-            self.sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-            self.sizePolicy.setHeightForWidth(self.buttonList[i].sizePolicy().hasHeightForWidth())
-            self.buttonList[i].setSizePolicy(self.sizePolicy)
-            self.gridLayout.addWidget(self.buttonList[i], int(i/4), int(i%4), 1, 1)
-
-        # Connect a button press event with a function buttonPress
-        for i in range (16):
-            self.buttonList[i].clicked.connect(self.buttonPress)
-
 
     def setupMenuBar(self):
 
@@ -117,7 +52,7 @@ class MediaCentre(QtGui.QMainWindow):
 
         self.actionOpenDir = QtGui.QAction(self)
         self.actionOpenDir.setText("Import Folder")
-    	#self.actionOpenDir.triggered.connect(self.menuOpenDirEvent)
+        #self.actionOpenDir.triggered.connect(self.menuOpenDirEvent)
 
         self.actionLoadSesh = QtGui.QAction(self)
         self.actionLoadSesh.setText("Load Session")
@@ -173,18 +108,6 @@ class MediaCentre(QtGui.QMainWindow):
 
          self.slotList[i].addSample("tmp" + "\\" + filename)
 
-    def setupTabs(self, parent):
-
-        # Setup tabs
-        tabWidget = QtGui.QTabWidget(parent)
-        tabWidget.setGeometry(QtCore.QRect(0, 0, 1040, 640))
-        tab = QtGui.QWidget()
-        tabWidget.addTab(tab,"Tab1")
-        tab_2 = QtGui.QWidget()
-        tabWidget.addTab(tab_2,"Tab2")
-
-        return tab, tab_2
-
     # Setup all the windows/buttons etc..
     def setupUi(self):
 
@@ -192,22 +115,14 @@ class MediaCentre(QtGui.QMainWindow):
         self.setWindowTitle('Media Centre')
         self.resize(1500,900);
 
-        # Status bar
-        self.setupStatusBar()
-
         # Menu bar
         self.setupMenuBar()
-
-        #self.centralWidget = QtGui.QWidget(self)
-        #self.setCentralWidget(self.centralWidget)
-
-        #self.tab1, self.tab2 = self.setupTabs(self.centralWidget)
 
         self.slotTableWidget = QtGui.QWidget()
 
         self.slotTableLayout = QtGui.QVBoxLayout()
         self.slotTableLayout.setSpacing(0)
-        self.slotTableLayout.setMargin(0)
+        #self.slotTableLayout.setMargin(0)
 
         self.slotList = [None]*(16)
 
@@ -225,18 +140,6 @@ class MediaCentre(QtGui.QMainWindow):
         self.setCentralWidget(self.scrollarea)
 
 
-        #self.scrollarea.setWidget(self.waveform)
-
-        #self.scrollarea.setMinimumSize(640,120)
-
-        #self.setupKeypad(self.tab2)
-
-        #self.setupList(self.tab1)
-
-
-
-
-
 class WaveFormSlot(QtGui.QWidget):
 
     def __init__(self, num, width, height, parent = None):
@@ -248,7 +151,7 @@ class WaveFormSlot(QtGui.QWidget):
         self.waveFilePath = ""
         self.waveFileName = ""
         self.wavefile = None
-        
+
         self.num = num
 
         self.dataSet = numpy.array([])
@@ -415,10 +318,10 @@ class WaveFormSlot(QtGui.QWidget):
 
 
     def dropEvent(self, e):
-        path = e.mimeData().urls()[0].toLocalFile().toLocal8Bit().data()
+        path = e.mimeData().urls()[0].toLocalFile()
         e.acceptProposedAction()
         self.addSample(path)
-        
+
 class WaveformPaintArea(QtGui.QWidget):
 
   def __init__(self, parent, width, height):
@@ -439,6 +342,9 @@ class WaveformPaintArea(QtGui.QWidget):
     self.sliceLeftValue = 0
     self.sliceRightValue = 0
 
+    self.pixBuffer = QtGui.QPixmap(width,height)
+    self.pixBuffer.fill(QtGui.QColor(0,0,0))
+
   def getData(self):
     return Filters.IntToFloat(self.dataSet)
 
@@ -450,7 +356,8 @@ class WaveformPaintArea(QtGui.QWidget):
     self.dataSet = Filters.FloatToInt(data)
     self.division = int(Filters.Peak2Peak(self.dataSet)/self.height)
     self.step = int(len(self.dataSet) / self.undersample)
-    self.update()
+    self.pixBuffer.fill(QtGui.QColor(0,0,0))
+    self.updateBuffer()
 
   def paintEvent(self, event):
 
@@ -458,23 +365,30 @@ class WaveformPaintArea(QtGui.QWidget):
 
     painter.begin(self)
 
-    self.drawWaveForm(painter)
-
-    #self.drawSlices(painter)
+    painter.drawPixmap(0,0,self.pixBuffer)
+    self.drawSlices(painter)
 
     painter.end()
 
-  @QtCore.pyqtSlot(int)
+  def updateBuffer(self):
+
+    painter = QtGui.QPainter(self.pixBuffer)
+
+    self.drawWaveForm(painter)
+
+    self.update()
+
+  @QtCore.Slot(int)
   def updateRightSlice(self,value):
     self.sliceRightValue = value
     self.sliceRight = int(value*self.width/1000.0)
-    self.update()
+    self.updateBuffer()
 
-  @QtCore.pyqtSlot(int)
+  @QtCore.Slot(int)
   def updateLeftSlice(self,value):
     self.sliceLeftValue = value
     self.sliceLeft = int(value*self.width/1000.0)
-    self.update()
+    self.updateBuffer()
 
   def drawSlices(self, painter):
 
@@ -495,7 +409,7 @@ class WaveformPaintArea(QtGui.QWidget):
     pen = QtGui.QPen(QtGui.QColor(0,200,200))
     pen.setWidth(1) #pixel
     painter.setPen(pen)
-  
+
     step = len(self.dataSet) / self.undersample
 
     for i in range(step):
@@ -504,21 +418,20 @@ class WaveformPaintArea(QtGui.QWidget):
       painter.drawPoint(x, y)
 
 class WaveOptionForm(QtGui.QWidget):
-    playPressed = QtCore.pyqtSignal()
-    resetPressed = QtCore.pyqtSignal()
-    syncPressed = QtCore.pyqtSignal()
+    playPressed = QtCore.Signal()
+    resetPressed = QtCore.Signal()
+    syncPressed = QtCore.Signal()
 
-    addDelay = QtCore.pyqtSignal()
-    addEcho = QtCore.pyqtSignal()
-    addDecimator = QtCore.pyqtSignal()
-    addPitchShift = QtCore.pyqtSignal()
-    addBitCrusher = QtCore.pyqtSignal()
-    addVolume = QtCore.pyqtSignal()
+    addDelay = QtCore.Signal()
+    addEcho = QtCore.Signal()
+    addDecimator = QtCore.Signal()
+    addPitchShift = QtCore.Signal()
+    addBitCrusher = QtCore.Signal()
+    addVolume = QtCore.Signal()
 
-    leftSlider = QtCore.pyqtSignal(int)
-    rightSlider = QtCore.pyqtSignal(int)
-    slicePressed = QtCore.pyqtSignal()
-
+    leftSlider = QtCore.Signal(int)
+    rightSlider = QtCore.Signal(int)
+    slicePressed = QtCore.Signal()
 
     def __init__(self, parent):
         super(WaveOptionForm, self).__init__(parent)
@@ -585,11 +498,8 @@ class WaveOptionForm(QtGui.QWidget):
         layout.addWidget(self.leftSliderSlider, 2, 1)
         layout.addWidget(self.rightSliderSlider, 2, 2)
 
-        #self.leftSliderSlider.valueChanged.connect(self.leftSlider)
-        #self.rightSliderSlider.valueChanged.connect(self.rightSlider)
-
-        self.connect(self.leftSliderSlider, QtCore.SIGNAL("valueChanged(int)"), self.leftSlider)
-        self.connect(self.rightSliderSlider, QtCore.SIGNAL("valueChanged(int)"), self.rightSlider)
+        self.leftSliderSlider.valueChanged.connect(self.leftSlider)
+        self.rightSliderSlider.valueChanged.connect(self.rightSlider)
 
         self.loop_int = QtGui.QComboBox(self)
         self.loop_int.addItems(["1/2", "1/4", "1/8", "1/16", "1/32"])
@@ -603,28 +513,6 @@ class WaveOptionForm(QtGui.QWidget):
         layout.setColumnStretch(1, 10)
         layout.setColumnStretch(2, 20)
 
-class MPCPadButton(QtGui.QPushButton):
-
-    def __init__(self, title, parent, num):
-        super(MPCPadButton, self).__init__(title, parent)
-        self.setAcceptDrops(True)
-        self.num = num
-
-    def dragEnterEvent(self, e):
-        QtCore.qDebug("MPCPadButton: dragEnterEvent(" + str(e) + ")" )
-        e.acceptProposedAction()
-
-    def dropEvent(self, e):
-        QtCore.qDebug("MPCPadButton: dropEvent(" + str(e) + ")" )
-        QtCore.qDebug(e.mimeData().text())
-
-    def selectButton(self):
-      pass
-    #TODO change font-weight slot indicate when a button has a sample
-
-
-
-
 
 # Create the main QApplication
 app = QtGui.QApplication(sys.argv)
@@ -632,8 +520,6 @@ app = QtGui.QApplication(sys.argv)
 # Create our widget & Show it
 window = MediaCentre()
 window.show()
-window.raise_()
-
 
 # Execute this app
 sys.exit(app.exec_())

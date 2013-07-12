@@ -2,7 +2,12 @@
 
 import numpy
 import scikits.samplerate as sp
-import winsound
+
+try:
+    import winsound
+except ImportError:
+    pass
+
 import struct
 
 
