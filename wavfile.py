@@ -1,23 +1,19 @@
 #!/usr/bin/python2
 
+from PySide import QtGui, QtCore
+
 import wave
 import sys
 import struct
-
 import numpy
+
+try:
+    import winsound
+except ImportError:
+    pass
 
 from filters import Filters
 
-try:
-    from PyQt4 import QtGui, QtCore
-except ImportError:
-    from PySide import QtGui, QtCore
-
-def isWindows():
-  return sys.platform == "win32"
-
-if isWindows():
-  import winsound
 
 class WavFileReader:
 
@@ -54,7 +50,6 @@ class WavFileReader:
       self.mono = numpy.array([])
       self.close()
       return
-
 
     # convert dual channel to single channel (mono)
     if self.getNumChannels() == 2:

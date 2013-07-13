@@ -14,7 +14,7 @@ class SysCtl:
 
   @staticmethod
   def isWindows():
-    return (sys.platform == "win32")#
+    return (sys.platform == "win32")
 
   @staticmethod
   def isLinux():
@@ -33,7 +33,7 @@ class SysCtl:
       return drives
 
     else:
-      return os.listdir("/run/media/sam")
+      return os.listdir(".")
 
   @staticmethod
   def copyFile(srcPath, destPath):
@@ -63,6 +63,5 @@ class SysCtl:
       os.chdir(letter + ":\\")
       return os.listdir(".")
     else:
-      os.chdir("/run/media/sam/" + letter)
       return os.listdir(".")
   
